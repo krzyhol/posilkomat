@@ -1,0 +1,37 @@
+{
+  "name": "posilkomat",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Posiłkomat – jadłospisy, podmiana posiłków, lista zakupów i przepisy z AI",
+  "type": "module",
+  "engines": {
+    "node": ">=24"
+  },
+  "scripts": {
+    "db:init": "node --no-warnings db/seed.ts",
+    "db:reset": "node --no-warnings db/seed.ts --force",
+    "dev": "node --no-warnings scripts/dev.ts",
+    "dev:server": "node --no-warnings --watch server/index.ts",
+    "dev:web": "vite",
+    "build": "tsc -p tsconfig.json --noEmit && vite build",
+    "start": "node --no-warnings server/index.ts",
+    "typecheck": "tsc -p tsconfig.json --noEmit"
+  },
+  "dependencies": {
+    "@anthropic-ai/sdk": "^0.132.1",
+    "@fontsource-variable/fraunces": "^5.3.0",
+    "@fontsource/instrument-sans": "^5.3.0",
+    "@fontsource/jetbrains-mono": "^5.3.0",
+    "react": "^19.3.0",
+    "react-dom": "^19.3.0",
+    "zod": "^4.6.5"
+  },
+  "devDependencies": {
+    "@types/node": "^26.6.4",
+    "@types/react": "^19.3.0",
+    "@types/react-dom": "^19.3.0",
+    "@vitejs/plugin-react": "^6.1.2",
+    "typescript": "^7.0.2",
+    "vite": "^8.3.4"
+  }
+}

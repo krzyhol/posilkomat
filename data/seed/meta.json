@@ -1,0 +1,663 @@
+{
+  "schema_version": "1.0.0",
+  "generated_at": "2026-10-09",
+  "meal_slots": [
+    {
+      "id": "breakfast",
+      "name": "Śniadanie",
+      "order": 1,
+      "default_time": {
+        "from": "06:00",
+        "to": "09:00"
+      }
+    },
+    {
+      "id": "second_breakfast",
+      "name": "II śniadanie",
+      "order": 2,
+      "default_time": {
+        "from": "10:00",
+        "to": "13:00"
+      }
+    },
+    {
+      "id": "lunch",
+      "name": "Obiad",
+      "order": 3,
+      "default_time": {
+        "from": "14:00",
+        "to": "17:00"
+      }
+    },
+    {
+      "id": "dinner",
+      "name": "Kolacja",
+      "order": 4,
+      "default_time": {
+        "from": "18:00",
+        "to": "21:00"
+      }
+    },
+    {
+      "id": "snack",
+      "name": "Przekąska",
+      "order": 5,
+      "default_time": null
+    }
+  ],
+  "product_categories": [
+    {
+      "id": "warzywa",
+      "name": "Warzywa i zioła świeże",
+      "order": 1
+    },
+    {
+      "id": "owoce",
+      "name": "Owoce",
+      "order": 2
+    },
+    {
+      "id": "pieczywo",
+      "name": "Pieczywo",
+      "order": 3
+    },
+    {
+      "id": "nabial",
+      "name": "Nabiał i jaja",
+      "order": 4
+    },
+    {
+      "id": "mieso",
+      "name": "Mięso i wędliny",
+      "order": 5
+    },
+    {
+      "id": "ryby",
+      "name": "Ryby i owoce morza",
+      "order": 6
+    },
+    {
+      "id": "roslinne",
+      "name": "Tofu, hummus i produkty roślinne",
+      "order": 7
+    },
+    {
+      "id": "zboza",
+      "name": "Kasze, ryż, makarony i płatki",
+      "order": 8
+    },
+    {
+      "id": "pieczenie",
+      "name": "Mąki, słodziki i do pieczenia",
+      "order": 9
+    },
+    {
+      "id": "konserwy",
+      "name": "Strączki, konserwy i przetwory",
+      "order": 10
+    },
+    {
+      "id": "orzechy",
+      "name": "Orzechy, nasiona i bakalie",
+      "order": 11
+    },
+    {
+      "id": "przyprawy",
+      "name": "Przyprawy i zioła suszone",
+      "order": 12
+    },
+    {
+      "id": "oleje_sosy",
+      "name": "Oleje, octy, sosy i smarowidła",
+      "order": 13
+    },
+    {
+      "id": "slodycze",
+      "name": "Słodycze i przekąski",
+      "order": 14
+    },
+    {
+      "id": "produkty_proteinowe",
+      "name": "Produkty gotowe: proteinowe, desery, smoothie",
+      "order": 15
+    },
+    {
+      "id": "napoje",
+      "name": "Napoje i soki",
+      "order": 16
+    },
+    {
+      "id": "mrozonki_gotowe",
+      "name": "Mrożonki i dania gotowe",
+      "order": 17
+    },
+    {
+      "id": "polprodukty",
+      "name": "Półprodukty (przygotuj wg przepisu bazowego)",
+      "order": 18
+    },
+    {
+      "id": "inne",
+      "name": "Inne",
+      "order": 19
+    }
+  ],
+  "units": [
+    {
+      "id": "sztuka",
+      "short": "szt.",
+      "forms": {
+        "one": "sztuka",
+        "few": "sztuki",
+        "many": "sztuk",
+        "fraction": "sztuki"
+      }
+    },
+    {
+      "id": "łyżka",
+      "short": "łyżka",
+      "forms": {
+        "one": "łyżka",
+        "few": "łyżki",
+        "many": "łyżek",
+        "fraction": "łyżki"
+      }
+    },
+    {
+      "id": "łyżeczka",
+      "short": "łyżeczka",
+      "forms": {
+        "one": "łyżeczka",
+        "few": "łyżeczki",
+        "many": "łyżeczek",
+        "fraction": "łyżeczki"
+      }
+    },
+    {
+      "id": "szczypta",
+      "short": "szczypta",
+      "forms": {
+        "one": "szczypta",
+        "few": "szczypty",
+        "many": "szczypt",
+        "fraction": "szczypty"
+      }
+    },
+    {
+      "id": "szklanka",
+      "short": "szkl.",
+      "forms": {
+        "one": "szklanka",
+        "few": "szklanki",
+        "many": "szklanek",
+        "fraction": "szklanki"
+      }
+    },
+    {
+      "id": "kromka",
+      "short": "kromka",
+      "forms": {
+        "one": "kromka",
+        "few": "kromki",
+        "many": "kromek",
+        "fraction": "kromki"
+      }
+    },
+    {
+      "id": "plaster",
+      "short": "plaster",
+      "forms": {
+        "one": "plaster",
+        "few": "plastry",
+        "many": "plastrów",
+        "fraction": "plastra"
+      }
+    },
+    {
+      "id": "opakowanie",
+      "short": "op.",
+      "forms": {
+        "one": "opakowanie",
+        "few": "opakowania",
+        "many": "opakowań",
+        "fraction": "opakowania"
+      }
+    },
+    {
+      "id": "ząbek",
+      "short": "ząbek",
+      "forms": {
+        "one": "ząbek",
+        "few": "ząbki",
+        "many": "ząbków",
+        "fraction": "ząbka"
+      }
+    },
+    {
+      "id": "garść",
+      "short": "garść",
+      "forms": {
+        "one": "garść",
+        "few": "garści",
+        "many": "garści",
+        "fraction": "garści"
+      }
+    },
+    {
+      "id": "kostka",
+      "short": "kostka",
+      "forms": {
+        "one": "kostka",
+        "few": "kostki",
+        "many": "kostek",
+        "fraction": "kostki"
+      }
+    },
+    {
+      "id": "łodyga",
+      "short": "łodyga",
+      "forms": {
+        "one": "łodyga",
+        "few": "łodygi",
+        "many": "łodyg",
+        "fraction": "łodygi"
+      }
+    },
+    {
+      "id": "listek",
+      "short": "listek",
+      "forms": {
+        "one": "listek",
+        "few": "listki",
+        "many": "listków",
+        "fraction": "listka"
+      }
+    },
+    {
+      "id": "porcja",
+      "short": "porcja",
+      "forms": {
+        "one": "porcja",
+        "few": "porcje",
+        "many": "porcji",
+        "fraction": "porcji"
+      }
+    }
+  ],
+  "product_origins": [
+    {
+      "id": "plant",
+      "name": "roślinne"
+    },
+    {
+      "id": "dairy",
+      "name": "nabiał"
+    },
+    {
+      "id": "egg",
+      "name": "jaja"
+    },
+    {
+      "id": "honey",
+      "name": "miód"
+    },
+    {
+      "id": "fish",
+      "name": "ryby"
+    },
+    {
+      "id": "meat",
+      "name": "mięso / żelatyna"
+    }
+  ],
+  "allergens": [
+    {
+      "id": "gluten",
+      "name": "Gluten"
+    },
+    {
+      "id": "mleko",
+      "name": "Mleko (laktoza)"
+    },
+    {
+      "id": "jaja",
+      "name": "Jaja"
+    },
+    {
+      "id": "orzechy",
+      "name": "Orzechy"
+    },
+    {
+      "id": "orzeszki_ziemne",
+      "name": "Orzeszki ziemne"
+    },
+    {
+      "id": "soja",
+      "name": "Soja"
+    },
+    {
+      "id": "sezam",
+      "name": "Sezam"
+    },
+    {
+      "id": "ryby",
+      "name": "Ryby"
+    },
+    {
+      "id": "gorczyca",
+      "name": "Gorczyca"
+    },
+    {
+      "id": "seler",
+      "name": "Seler"
+    }
+  ],
+  "tag_vocabulary": {
+    "dish_type": [
+      "owsianka",
+      "kanapki",
+      "sałatka",
+      "zupa",
+      "koktajl",
+      "makaron",
+      "wrap",
+      "bowl",
+      "placki",
+      "jajka",
+      "deser",
+      "pasta-do-pieczywa",
+      "zapiekanka",
+      "burger",
+      "jogurt-lub-serek",
+      "danie-mięsne-lub-rybne",
+      "warzywa-pieczone-lub-grillowane",
+      "przekąska-prosta",
+      "danie-z-kaszą-lub-ryżem",
+      "zestaw-z-gotowych-produktów"
+    ],
+    "protein": [
+      "drób",
+      "wołowina",
+      "wieprzowina",
+      "ryba",
+      "tofu-soja",
+      "strączki",
+      "jajka",
+      "nabiał"
+    ],
+    "diet": [
+      "wegetariańska",
+      "wegańska",
+      "pescowegetariańska",
+      "bez-glutenu",
+      "bez-laktozy"
+    ],
+    "features": [
+      "lunchbox",
+      "bez-gotowania",
+      "piekarnik",
+      "na-noc"
+    ],
+    "flavor": [
+      "słodki",
+      "wytrawny"
+    ]
+  },
+  "slot_swap_compatibility": {
+    "breakfast": [
+      "breakfast",
+      "second_breakfast",
+      "dinner"
+    ],
+    "second_breakfast": [
+      "second_breakfast",
+      "breakfast",
+      "snack"
+    ],
+    "lunch": [
+      "lunch",
+      "dinner"
+    ],
+    "dinner": [
+      "dinner",
+      "lunch",
+      "breakfast"
+    ],
+    "snack": [
+      "snack",
+      "second_breakfast"
+    ]
+  },
+  "substitution_groups": [
+    {
+      "id": "tluszcze-orzechy-nasiona",
+      "name": "Źródła tłuszczu – orzechy, nasiona, pestki",
+      "mode": "equal_weight",
+      "items": [
+        {
+          "product_id": "orzechy-wloskie"
+        },
+        {
+          "product_id": "orzechy-nerkowca"
+        },
+        {
+          "product_id": "orzechy-laskowe"
+        },
+        {
+          "product_id": "orzechy-pistacjowe-niesolone"
+        },
+        {
+          "product_id": "orzechy-pinii"
+        },
+        {
+          "product_id": "orzechy-pekan"
+        },
+        {
+          "product_id": "orzechy-arachidowe"
+        },
+        {
+          "product_id": "siemie-lniane"
+        },
+        {
+          "product_id": "sezam-nasiona"
+        },
+        {
+          "product_id": "nasiona-slonecznika"
+        },
+        {
+          "product_id": "pestki-dyni"
+        },
+        {
+          "product_id": "wiorki-kokosowe"
+        },
+        {
+          "product_id": "maslo-orzechowe"
+        },
+        {
+          "product_id": "nasiona-chia"
+        }
+      ]
+    },
+    {
+      "id": "tluszcze-oleje",
+      "name": "Źródła tłuszczu – oleje i masło",
+      "mode": "equal_weight",
+      "items": [
+        {
+          "product_id": "oliwa-z-oliwek"
+        },
+        {
+          "product_id": "olej-rzepakowy"
+        },
+        {
+          "product_id": "olej-z-awokado"
+        },
+        {
+          "product_id": "olej-kokosowy"
+        },
+        {
+          "product_id": "maslo-extra"
+        }
+      ]
+    },
+    {
+      "id": "napoje-bez-kalorii",
+      "name": "Napoje",
+      "mode": "equal_weight",
+      "items": [
+        {
+          "product_id": "woda"
+        },
+        {
+          "product_id": "herbata"
+        },
+        {
+          "product_id": "kawa"
+        },
+        {
+          "product_id": "napary-ziolowe"
+        }
+      ],
+      "note": "np. mięta, pokrzywa, melisa"
+    },
+    {
+      "id": "owoce",
+      "name": "Zamienniki owoców (porcje równoważne)",
+      "mode": "equivalent_portions",
+      "items": [
+        {
+          "product_id": "banan",
+          "grams": 120,
+          "household": {
+            "qty": 1,
+            "unit": "sztuka"
+          }
+        },
+        {
+          "product_id": "jablko",
+          "grams": 170,
+          "household": {
+            "qty": 1,
+            "unit": "sztuka"
+          }
+        },
+        {
+          "product_id": "pomarancza",
+          "grams": 240,
+          "household": {
+            "qty": 1,
+            "unit": "sztuka"
+          }
+        },
+        {
+          "product_id": "kaki",
+          "grams": 125,
+          "household": {
+            "qty": 0.5,
+            "unit": "sztuka"
+          }
+        },
+        {
+          "product_id": "mandarynki",
+          "grams": 195,
+          "household": {
+            "qty": 3,
+            "unit": "sztuka"
+          }
+        },
+        {
+          "product_id": "brzoskwinia",
+          "grams": 180,
+          "household": {
+            "qty": 2,
+            "unit": "sztuka"
+          }
+        },
+        {
+          "product_id": "gruszka",
+          "grams": 170,
+          "household": {
+            "qty": 1,
+            "unit": "sztuka"
+          }
+        },
+        {
+          "product_id": "kiwi",
+          "grams": 160,
+          "household": {
+            "qty": 2,
+            "unit": "sztuka"
+          }
+        },
+        {
+          "product_id": "maliny",
+          "grams": 210,
+          "household": {
+            "qty": 3,
+            "unit": "garść"
+          }
+        },
+        {
+          "product_id": "truskawki",
+          "grams": 280,
+          "household": {
+            "qty": 4,
+            "unit": "garść"
+          }
+        },
+        {
+          "product_id": "winogrona",
+          "grams": 140,
+          "household": {
+            "qty": 2,
+            "unit": "garść"
+          }
+        },
+        {
+          "product_id": "grejpfrut",
+          "grams": 220,
+          "household": {
+            "qty": 1,
+            "unit": "sztuka"
+          }
+        },
+        {
+          "product_id": "mango",
+          "grams": 140,
+          "household": {
+            "qty": 0.5,
+            "unit": "sztuka"
+          }
+        },
+        {
+          "product_id": "sliwki",
+          "grams": 210,
+          "household": {
+            "qty": 7,
+            "unit": "sztuka"
+          }
+        },
+        {
+          "product_id": "ananas",
+          "grams": 200
+        },
+        {
+          "product_id": "borowki-amerykanskie",
+          "grams": 175,
+          "household": {
+            "qty": 4,
+            "unit": "garść"
+          }
+        },
+        {
+          "product_id": "czeresnie",
+          "grams": 160,
+          "household": {
+            "qty": 2,
+            "unit": "garść"
+          }
+        }
+      ]
+    }
+  ]
+}

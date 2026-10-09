@@ -1,0 +1,1010 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://posilkomat.app/schema/posilkomat.schema.json",
+  "title": "Posiłkomat – model danych",
+  "description": "Definicje: produkty (katalog do listy zakupów), przepisy/posiłki, jadłospisy, listy zakupów oraz szkic przepisu generowany przez AI.",
+  "$defs": {
+    "Id": {
+      "type": "string",
+      "pattern": "^[a-z0-9]+(-[a-z0-9]+)*$",
+      "maxLength": 100
+    },
+    "SlotId": {
+      "enum": [
+        "breakfast",
+        "second_breakfast",
+        "lunch",
+        "dinner",
+        "snack"
+      ]
+    },
+    "UnitId": {
+      "enum": [
+        "sztuka",
+        "łyżka",
+        "łyżeczka",
+        "szczypta",
+        "szklanka",
+        "kromka",
+        "plaster",
+        "opakowanie",
+        "ząbek",
+        "garść",
+        "kostka",
+        "łodyga",
+        "listek",
+        "porcja"
+      ]
+    },
+    "CategoryId": {
+      "enum": [
+        "warzywa",
+        "owoce",
+        "pieczywo",
+        "nabial",
+        "mieso",
+        "ryby",
+        "roslinne",
+        "zboza",
+        "pieczenie",
+        "konserwy",
+        "orzechy",
+        "przyprawy",
+        "oleje_sosy",
+        "slodycze",
+        "produkty_proteinowe",
+        "napoje",
+        "mrozonki_gotowe",
+        "polprodukty",
+        "inne"
+      ]
+    },
+    "AllergenId": {
+      "enum": [
+        "gluten",
+        "mleko",
+        "jaja",
+        "orzechy",
+        "orzeszki_ziemne",
+        "soja",
+        "sezam",
+        "ryby",
+        "gorczyca",
+        "seler"
+      ]
+    },
+    "Time": {
+      "type": "object",
+      "required": [
+        "from",
+        "to"
+      ],
+      "properties": {
+        "from": {
+          "type": "string",
+          "pattern": "^\\d{2}:\\d{2}$"
+        },
+        "to": {
+          "type": "string",
+          "pattern": "^\\d{2}:\\d{2}$"
+        }
+      },
+      "additionalProperties": false
+    },
+    "Macros": {
+      "type": "object",
+      "required": [
+        "kcal",
+        "protein_g",
+        "carbs_g",
+        "fat_g"
+      ],
+      "properties": {
+        "kcal": {
+          "type": "number",
+          "minimum": 0,
+          "description": "Dla produktów: 4·B + 9·T + 4·W przyswajalne + 2·błonnik (poliole i alkohol wg własnej wartości)."
+        },
+        "protein_g": {
+          "type": "number",
+          "minimum": 0
+        },
+        "carbs_g": {
+          "type": "number",
+          "minimum": 0,
+          "description": "Węglowodany ogółem (z błonnikiem) – tak jak w jadłospisach PDF."
+        },
+        "fat_g": {
+          "type": "number",
+          "minimum": 0
+        },
+        "fiber_g": {
+          "type": [
+            "number",
+            "null"
+          ],
+          "minimum": 0
+        }
+      },
+      "additionalProperties": false
+    },
+    "Household": {
+      "description": "Miara domowa, np. 0.5 sztuki, 2 łyżki. Gramatura w amount_g jest zawsze źródłem prawdy.",
+      "type": [
+        "object",
+        "null"
+      ],
+      "required": [
+        "qty",
+        "unit"
+      ],
+      "properties": {
+        "qty": {
+          "type": "number",
+          "exclusiveMinimum": 0
+        },
+        "unit": {
+          "$ref": "#/$defs/UnitId"
+        }
+      },
+      "additionalProperties": false
+    },
+    "Product": {
+      "type": "object",
+      "required": [
+        "id",
+        "name",
+        "category",
+        "origin",
+        "allergens",
+        "pantry_staple",
+        "shoppable",
+        "measures",
+        "source",
+        "nutrition_source"
+      ],
+      "properties": {
+        "id": {
+          "$ref": "#/$defs/Id"
+        },
+        "name": {
+          "type": "string",
+          "minLength": 1
+        },
+        "aliases": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "Inne nazwy spotykane w przepisach – do dopasowania nazw z AI / wpisanych przez użytkownika."
+        },
+        "category": {
+          "$ref": "#/$defs/CategoryId"
+        },
+        "origin": {
+          "enum": [
+            "plant",
+            "dairy",
+            "egg",
+            "honey",
+            "fish",
+            "meat"
+          ],
+          "description": "Pochodzenie – z niego wyliczamy diety wegetariańska/wegańska."
+        },
+        "allergens": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/AllergenId"
+          },
+          "uniqueItems": true
+        },
+        "pantry_staple": {
+          "type": "boolean",
+          "description": "Zwykle jest w domu (sól, oliwa, przyprawy) – lista zakupów może to domyślnie ukrywać."
+        },
+        "shoppable": {
+          "type": "boolean",
+          "description": "false = nigdy nie trafia na listę zakupów (woda, lód)."
+        },
+        "measures": {
+          "type": "array",
+          "description": "Ile gramów waży jedna miara domowa – do zamiany gramów na 'szt.'/'op.' na liście zakupów.",
+          "items": {
+            "type": "object",
+            "required": [
+              "unit",
+              "grams"
+            ],
+            "properties": {
+              "unit": {
+                "$ref": "#/$defs/UnitId"
+              },
+              "grams": {
+                "type": "number",
+                "exclusiveMinimum": 0
+              }
+            },
+            "additionalProperties": false
+          }
+        },
+        "nutrition_per_100g": {
+          "description": "Do uzupełnienia (baza produktów / AI). Umożliwia przeliczanie makro po podmianie składnika.",
+          "oneOf": [
+            {
+              "type": "null"
+            },
+            {
+              "$ref": "#/$defs/Macros"
+            }
+          ]
+        },
+        "source": {
+          "type": "object",
+          "required": [
+            "type"
+          ],
+          "properties": {
+            "type": {
+              "enum": [
+                "pdf_import",
+                "exchange_list",
+                "user",
+                "ai_generated"
+              ]
+            }
+          }
+        },
+        "recipe_count": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "nutrition_source": {
+          "$ref": "#/$defs/NutritionSource"
+        },
+        "base_recipe_id": {
+          "$ref": "#/$defs/Id",
+          "description": "Półprodukt ma przepis bazowy – lista zakupów może go rozwinąć do surowców."
+        }
+      },
+      "additionalProperties": false
+    },
+    "Ingredient": {
+      "type": "object",
+      "required": [
+        "product_id",
+        "name",
+        "amount_g"
+      ],
+      "properties": {
+        "product_id": {
+          "$ref": "#/$defs/Id"
+        },
+        "name": {
+          "type": "string",
+          "description": "Nazwa wyświetlana w przepisie (może być bardziej szczegółowa niż nazwa produktu)."
+        },
+        "amount_g": {
+          "type": [
+            "number",
+            "null"
+          ],
+          "minimum": 0,
+          "description": "Ilość na CAŁY przepis (wszystkie porcje). null = do smaku."
+        },
+        "household": {
+          "$ref": "#/$defs/Household"
+        },
+        "group": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "description": "Sekcja składników, np. 'Sos', 'Do podania'."
+        },
+        "note": {
+          "type": "string"
+        },
+        "optional": {
+          "type": "boolean"
+        }
+      },
+      "additionalProperties": false
+    },
+    "Step": {
+      "type": "object",
+      "required": [
+        "order",
+        "text"
+      ],
+      "properties": {
+        "order": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "text": {
+          "type": "string",
+          "minLength": 1
+        },
+        "section": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "timer_min": {
+          "type": [
+            "number",
+            "null"
+          ]
+        }
+      },
+      "additionalProperties": false
+    },
+    "RecipeTags": {
+      "type": "object",
+      "properties": {
+        "dish_type": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "protein": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "diet": {
+          "type": "array",
+          "items": {
+            "enum": [
+              "wegetariańska",
+              "wegańska",
+              "pescowegetariańska",
+              "bez-glutenu",
+              "bez-laktozy"
+            ]
+          }
+        },
+        "features": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "flavor": {
+          "enum": [
+            "słodki",
+            "wytrawny"
+          ]
+        },
+        "custom": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "Tagi dodane przez użytkownika."
+        }
+      },
+      "additionalProperties": false
+    },
+    "RecipeSource": {
+      "type": "object",
+      "required": [
+        "type"
+      ],
+      "properties": {
+        "type": {
+          "enum": [
+            "pdf_import",
+            "user",
+            "ai_generated",
+            "ai_modified"
+          ]
+        },
+        "files": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "imported_at": {
+          "type": "string"
+        },
+        "author": {
+          "type": "string"
+        },
+        "model": {
+          "type": "string",
+          "description": "Model AI, np. claude-sonnet-5-5."
+        },
+        "prompt": {
+          "type": "string",
+          "description": "Polecenie użytkownika, z którego powstał przepis."
+        },
+        "generated_at": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "based_on_recipe_id": {
+          "$ref": "#/$defs/Id"
+        },
+        "nutrition_origin": {
+          "enum": [
+            "source_document",
+            "calculated",
+            "ai_estimate",
+            "user"
+          ],
+          "description": "Skąd pochodzą kalorie/makro – AI-estimate warto oznaczyć w UI."
+        }
+      },
+      "additionalProperties": false
+    },
+    "Recipe": {
+      "type": "object",
+      "required": [
+        "id",
+        "kind",
+        "name",
+        "meal_slots",
+        "servings",
+        "nutrition_per_serving",
+        "ingredients",
+        "steps",
+        "tags",
+        "allergens",
+        "source",
+        "status",
+        "version"
+      ],
+      "properties": {
+        "id": {
+          "$ref": "#/$defs/Id"
+        },
+        "kind": {
+          "enum": [
+            "meal",
+            "base"
+          ],
+          "description": "meal = posiłek do jadłospisu; base = przepis bazowy wytwarzający półprodukt."
+        },
+        "name": {
+          "type": "string",
+          "minLength": 1
+        },
+        "description": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "meal_slots": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/SlotId"
+          },
+          "uniqueItems": true,
+          "description": "Puste dla przepisów bazowych."
+        },
+        "servings": {
+          "type": "integer",
+          "minimum": 1,
+          "description": "Na ile porcji są podane składniki. Makro jest na 1 porcję."
+        },
+        "nutrition_per_serving": {
+          "$ref": "#/$defs/Macros"
+        },
+        "ingredients": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/Ingredient"
+          },
+          "minItems": 1
+        },
+        "steps": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/Step"
+          }
+        },
+        "tags": {
+          "$ref": "#/$defs/RecipeTags"
+        },
+        "allergens": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/AllergenId"
+          },
+          "uniqueItems": true
+        },
+        "prep_time_min": {
+          "type": [
+            "integer",
+            "null"
+          ],
+          "minimum": 0
+        },
+        "image": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "source": {
+          "$ref": "#/$defs/RecipeSource"
+        },
+        "status": {
+          "enum": [
+            "active",
+            "draft",
+            "archived"
+          ]
+        },
+        "version": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "variant_group": {
+          "$ref": "#/$defs/Id",
+          "description": "Wspólny klucz dla wariantów tego samego dania."
+        },
+        "created_at": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "updated_at": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "yield": {
+          "type": "object",
+          "required": [
+            "product_id",
+            "amount_g"
+          ],
+          "properties": {
+            "product_id": {
+              "$ref": "#/$defs/Id"
+            },
+            "amount_g": {
+              "type": "number",
+              "exclusiveMinimum": 0
+            },
+            "pieces": {
+              "type": "integer",
+              "minimum": 1
+            },
+            "piece_unit": {
+              "$ref": "#/$defs/UnitId"
+            }
+          },
+          "additionalProperties": false,
+          "description": "Tylko dla kind=base: jaki produkt i ile gramów powstaje."
+        }
+      },
+      "additionalProperties": false,
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "kind": {
+                "const": "meal"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "meal_slots": {
+                "minItems": 1
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "kind": {
+                "const": "base"
+              }
+            }
+          },
+          "then": {
+            "required": [
+              "yield"
+            ]
+          }
+        }
+      ]
+    },
+    "PlanMeal": {
+      "type": "object",
+      "required": [
+        "slot",
+        "recipe_id",
+        "portions"
+      ],
+      "properties": {
+        "slot": {
+          "$ref": "#/$defs/SlotId"
+        },
+        "time": {
+          "oneOf": [
+            {
+              "type": "null"
+            },
+            {
+              "$ref": "#/$defs/Time"
+            }
+          ]
+        },
+        "recipe_id": {
+          "$ref": "#/$defs/Id"
+        },
+        "portions": {
+          "type": "number",
+          "exclusiveMinimum": 0,
+          "description": "Ile porcji przepisu zjada się w tym posiłku (zwykle 1)."
+        },
+        "status": {
+          "enum": [
+            "planned",
+            "eaten",
+            "skipped"
+          ]
+        },
+        "leftover_from": {
+          "type": "string",
+          "description": "Data/dzień, w którym przepis wielo­porcjowy był ugotowany – wtedy nie liczymy go drugi raz do zakupów."
+        },
+        "swapped_from_recipe_id": {
+          "$ref": "#/$defs/Id"
+        }
+      },
+      "additionalProperties": false
+    },
+    "PlanDay": {
+      "type": "object",
+      "required": [
+        "meals"
+      ],
+      "properties": {
+        "day": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "date": {
+          "type": "string",
+          "format": "date"
+        },
+        "meals": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/PlanMeal"
+          }
+        },
+        "totals": {
+          "type": "object",
+          "properties": {
+            "kcal": {
+              "type": "number"
+            },
+            "protein_g": {
+              "type": "number"
+            },
+            "carbs_g": {
+              "type": "number"
+            },
+            "fat_g": {
+              "type": "number"
+            },
+            "fiber_g": {
+              "type": [
+                "number",
+                "null"
+              ]
+            },
+            "calcium_mg": {
+              "type": [
+                "number",
+                "null"
+              ]
+            },
+            "magnesium_mg": {
+              "type": [
+                "number",
+                "null"
+              ]
+            }
+          }
+        }
+      },
+      "additionalProperties": false
+    },
+    "Plan": {
+      "type": "object",
+      "required": [
+        "id",
+        "name",
+        "type",
+        "days"
+      ],
+      "properties": {
+        "id": {
+          "$ref": "#/$defs/Id"
+        },
+        "name": {
+          "type": "string"
+        },
+        "type": {
+          "enum": [
+            "template",
+            "user"
+          ],
+          "description": "template = jadłospis z PDF do skopiowania; user = jadłospis użytkownika z datami."
+        },
+        "start_date": {
+          "type": "string",
+          "format": "date"
+        },
+        "target_kcal": {
+          "type": "number"
+        },
+        "people": {
+          "type": "integer",
+          "minimum": 1,
+          "description": "Mnożnik do listy zakupów."
+        },
+        "source": {
+          "type": "object"
+        },
+        "days": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/PlanDay"
+          }
+        }
+      },
+      "additionalProperties": false
+    },
+    "ShoppingList": {
+      "description": "Generowana z jadłospisu: suma(amount_g × portions / servings) po product_id, grupowana po kategorii.",
+      "type": "object",
+      "required": [
+        "id",
+        "plan_id",
+        "items"
+      ],
+      "properties": {
+        "id": {
+          "$ref": "#/$defs/Id"
+        },
+        "plan_id": {
+          "$ref": "#/$defs/Id"
+        },
+        "date_range": {
+          "type": "object",
+          "properties": {
+            "from": {
+              "type": "string",
+              "format": "date"
+            },
+            "to": {
+              "type": "string",
+              "format": "date"
+            }
+          }
+        },
+        "items": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": [
+              "product_id",
+              "amount_g",
+              "checked"
+            ],
+            "properties": {
+              "product_id": {
+                "$ref": "#/$defs/Id"
+              },
+              "amount_g": {
+                "type": "number",
+                "minimum": 0
+              },
+              "household_hint": {
+                "type": "string",
+                "description": "np. '≈ 3 szt.' – wyliczone z Product.measures"
+              },
+              "category": {
+                "$ref": "#/$defs/CategoryId"
+              },
+              "checked": {
+                "type": "boolean"
+              },
+              "manual": {
+                "type": "boolean",
+                "description": "Dodane ręcznie przez użytkownika."
+              },
+              "recipe_ids": {
+                "type": "array",
+                "items": {
+                  "$ref": "#/$defs/Id"
+                }
+              }
+            },
+            "additionalProperties": false
+          }
+        }
+      },
+      "additionalProperties": false
+    },
+    "RecipeDraft": {
+      "description": "Format odpowiedzi AI (structured output / tool input). AI nie zna product_id – podaje nazwy; aplikacja dopasowuje je do katalogu (name + aliases) i tworzy brakujące produkty.",
+      "type": "object",
+      "required": [
+        "name",
+        "meal_slots",
+        "servings",
+        "nutrition_per_serving",
+        "ingredients",
+        "steps"
+      ],
+      "properties": {
+        "name": {
+          "type": "string"
+        },
+        "description": {
+          "type": "string"
+        },
+        "meal_slots": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/SlotId"
+          },
+          "minItems": 1
+        },
+        "servings": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "nutrition_per_serving": {
+          "$ref": "#/$defs/Macros"
+        },
+        "ingredients": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "object",
+            "required": [
+              "name",
+              "amount_g"
+            ],
+            "properties": {
+              "name": {
+                "type": "string"
+              },
+              "amount_g": {
+                "type": [
+                  "number",
+                  "null"
+                ]
+              },
+              "household": {
+                "$ref": "#/$defs/Household"
+              },
+              "group": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              },
+              "suggested_category": {
+                "$ref": "#/$defs/CategoryId"
+              }
+            },
+            "additionalProperties": false
+          }
+        },
+        "steps": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "minItems": 1
+        },
+        "prep_time_min": {
+          "type": "integer"
+        },
+        "tags": {
+          "$ref": "#/$defs/RecipeTags"
+        }
+      },
+      "additionalProperties": false
+    },
+    "ProductsFile": {
+      "type": "object",
+      "required": [
+        "schema_version",
+        "products"
+      ],
+      "properties": {
+        "schema_version": {
+          "type": "string"
+        },
+        "products": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/Product"
+          }
+        }
+      }
+    },
+    "RecipesFile": {
+      "type": "object",
+      "required": [
+        "schema_version",
+        "recipes"
+      ],
+      "properties": {
+        "schema_version": {
+          "type": "string"
+        },
+        "recipes": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/Recipe"
+          }
+        }
+      }
+    },
+    "PlansFile": {
+      "type": "object",
+      "required": [
+        "schema_version",
+        "plans"
+      ],
+      "properties": {
+        "schema_version": {
+          "type": "string"
+        },
+        "plans": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/Plan"
+          }
+        }
+      }
+    },
+    "NutritionSource": {
+      "type": "object",
+      "required": [
+        "type"
+      ],
+      "properties": {
+        "type": {
+          "enum": [
+            "reference",
+            "estimate",
+            "derived_from_recipes",
+            "calculated_from_base_recipe",
+            "label",
+            "user",
+            "ai_estimate"
+          ],
+          "description": "reference = tabele dla produktów ogólnych; estimate = szacunek dla produktu markowego; derived_from_recipes = wyliczone wstecz z makro przepisów PDF; calculated_from_base_recipe = z przepisu bazowego; label = z etykiety."
+        },
+        "recipes_used": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "base_recipe_id": {
+          "$ref": "#/$defs/Id"
+        }
+      },
+      "additionalProperties": false
+    }
+  }
+}
