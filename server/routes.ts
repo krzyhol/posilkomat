@@ -4,6 +4,7 @@ import {
   getMeta, getProfile, saveProfile, searchProducts, createProduct, listRecipes, getRecipe, createRecipe, patchRecipe, calcNutrition,
 } from './catalog.ts';
 import { createPlan, listPlans, getPlan, deletePlan, getToday, patchMeal, addMeal, deleteMeal, swapCandidates } from './planner.ts';
+import { ingredientSubstitutes, createVariant } from './substitutes.ts';
 import { listPantry, setPantryItem, removePantryItem, stockFromList, pantrySuggestions } from './pantry.ts';
 import { createShoppingList, getShoppingList, listShoppingLists, patchItem, addItem, deleteItem, deleteList } from './shopping.ts';
 
@@ -30,6 +31,9 @@ route('GET', '/api/recipes', ({ query }) => listRecipes({
 route('GET', '/api/recipes/:id', ({ params }) => need(getRecipe(params.id), 'Nie ma takiego przepisu'));
 route('POST', '/api/recipes', ({ body }) => createRecipe(body));
 route('PATCH', '/api/recipes/:id', ({ params, body }) => patchRecipe(params.id, body ?? {}));
+
+route('GET', '/api/recipes/:id/substitutes/:position', ({ params }) => ingredientSubstitutes(params.id, Number(params.position)));
+route('POST', '/api/recipes/:id/variant', ({ params, body }) => createVariant(params.id, body ?? {}));
 
 route('GET', '/api/today', ({ query }) => getToday(query.get('date') ?? undefined));
 route('GET', '/api/plans', () => listPlans());

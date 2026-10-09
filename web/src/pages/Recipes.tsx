@@ -4,6 +4,7 @@ import { DIETS, SLOT_NAME, SLOT_ORDER, SOURCE_LABEL, n, plural, qtyLabel, unitLa
 import { go, href } from '../router.tsx';
 import { Chip, ErrorBox, Icon, Loading, Macros, Plate, useToast } from '../components/ui.tsx';
 import { AddToPlanSheet } from '../components/meals.tsx';
+import { IngredientSwapSheet, type SubOption } from '../components/IngredientSwap.tsx';
 
 export function RecipeCard({ r }: { r: RecipeSummary }) {
   return (
@@ -99,14 +100,17 @@ export function RecipesList() {
 }
 
 // ------------------------------------------------------------------ karta przepisu
-export function RecipeDetail({ id }: { id: string }) {
+export function RecipeDetail({ id, mealId }: { id: string; mealId?: number | null }) {
   const meta = useMeta();
   const toast = useToast();
   const { data: r, error, loading, setData } = useApi<Recipe>(`/recipes/${id}`);
   const [servings, setServings] = useState<number | null>(null);
   const [done, setDone] = useState<Set<number>>(new Set());
   const [adding, setAdding] = useState(false);
-  useEffect(() => { setServings(null); setDone(new Set()); }, [id]);
+  const [swapPos, setSwapPos] = useState<number | null>(null);
+  const [subs, setSubs] = useState<Map<number, SubOption>>(new Map());
+  const [savingVariant, setSavingVariant] = useState(false);
+  useEffect(() => { setServings(null); setDone(new Set()); setSubs(new Map()); }, [id]);
 
   const groups = useMemo(() => {
     const g: { name: string | null; items: Recipe['ingredients'] }[] = [];
@@ -123,6 +127,18 @@ export function RecipeDetail({ id }: { id: string }) {
   const scale = s / r.servings;
   const check = r.nutrition_check;
   const diff = r.kcal ? Math.abs(check.kcal - r.kcal) / r.kcal : 0;
+
+  const subKcal = [...subs.values()].reduce((a, o) => a + o.delta.kcal, 0);
+  const saveVariant = async () => {
+    setSavingVariant(true);
+    try {
+      const v = await api<Recipe>(`/recipes/${r.id}/variant`, {
+        body: { replacements: [...subs].map(([position, o]) => ({ position, product_id: o.product_id, amount_g: o.amount_g })), plan_meal_id: mealId ?? undefined },
+      });
+      toast(mealId ? 'Wariant zapisany i podmieniony w jadłospisie.' : 'Wariant zapisany w Twoich przepisach.');
+      go(`/przepisy/${v.id}`);
+    } finally { setSavingVariant(false); }
+  };
 
   const fav = async () => {
     const out = await api<Recipe>(`/recipes/${r.id}`, { method: 'PATCH', body: { is_favorite: !r.is_favorite } });
@@ -216,27 +232,50 @@ export function RecipeDetail({ id }: { id: string }) {
               <li key={gi} style={{ display: 'block', border: 0, padding: 0 }}>
                 {g.name && <div className="group">{g.name}</div>}
                 <ul className="ing">
-                  {g.items.map((i) => (
-                    <li key={i.position}>
-                      <span>
-                        {i.name}
-                        {i.base_recipe_id && <> · <a href={href(`/przepisy/${i.base_recipe_id}`)} style={{ fontSize: 13 }}>przepis bazowy</a></>}
-                      </span>
-                      <span className="lead" />
-                      <span className="q">
-                        {i.amount_g == null ? 'do smaku' : `${n(i.amount_g * scale, i.amount_g * scale < 10 ? 2 : 0)} g`}
-                        {i.household_qty && i.household_unit && meta && (
-                          <small>{qtyLabel(i.household_qty * scale)} {unitLabel(i.household_unit, i.household_qty * scale, meta.units)}</small>
+                  {g.items.map((i) => {
+                    const sub = subs.get(i.position);
+                    return (
+                      <li key={i.position}>
+                        <span>
+                          {sub ? <><s className="muted">{i.name}</s> <b style={{ color: 'var(--dill)' }}>{sub.name}</b></> : i.name}
+                          {i.base_recipe_id && <> · <a href={href(`/przepisy/${i.base_recipe_id}`)} style={{ fontSize: 13 }}>przepis bazowy</a></>}
+                        </span>
+                        <span className="lead" />
+                        <span className="q">
+                          {sub ? `${n(sub.amount_g * scale, 0)} g` : i.amount_g == null ? 'do smaku' : `${n(i.amount_g * scale, i.amount_g * scale < 10 ? 2 : 0)} g`}
+                          {!sub && i.household_qty && i.household_unit && meta && (
+                            <small>{qtyLabel(i.household_qty * scale)} {unitLabel(i.household_unit, i.household_qty * scale, meta.units)}</small>
+                          )}
+                        </span>
+                        {r.kind === 'meal' && i.amount_g != null && !i.pantry_staple && i.category_id !== 'przyprawy' && (
+                          sub
+                            ? <button className="icon-btn" style={{ padding: 2 }} onClick={() => setSubs((m) => { const x = new Map(m); x.delete(i.position); return x; })} aria-label={`Cofnij podmianę: ${i.name}`}><Icon.x /></button>
+                            : <button className="icon-btn" style={{ padding: 2 }} onClick={() => setSwapPos(i.position)} aria-label={`Podmień składnik: ${i.name}`} title="Podmień składnik"><Icon.swap /></button>
                         )}
-                      </span>
-                    </li>
-                  ))}
+                      </li>
+                    );
+                  })}
                 </ul>
               </li>
             ))}
           </ul>
+          {subs.size > 0 && (
+            <div className="note" style={{ marginTop: 14 }}>
+              <div><b>{subs.size} {plural(subs.size, 'podmiana', 'podmiany', 'podmian')}</b> · {Math.round(r.kcal + subKcal)} kcal na porcję ({subKcal >= 0 ? '+' : '−'}{Math.abs(subKcal)})</div>
+              <div className="row" style={{ marginTop: 10 }}>
+                <button className="btn small tomato" onClick={saveVariant} disabled={savingVariant}>
+                  {savingVariant ? <span className="spinner" /> : <Icon.check />}{mealId ? 'Zapisz i podmień w jadłospisie' : 'Zapisz jako mój wariant'}
+                </button>
+                <button className="btn small link" onClick={() => setSubs(new Map())}>Cofnij wszystko</button>
+              </div>
+            </div>
+          )}
         </aside>
       </div>
+      {swapPos !== null && (
+        <IngredientSwapSheet recipeId={r.id} position={swapPos} onClose={() => setSwapPos(null)}
+          onPick={(o) => setSubs((m) => new Map(m).set(swapPos, o))} />
+      )}
       {adding && <AddToPlanSheet recipeId={r.id} recipeName={r.name} slots={r.slots} onClose={() => setAdding(false)} />}
     </>
   );

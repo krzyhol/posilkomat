@@ -32,6 +32,8 @@ export type Profile = {
   excluded_allergens: string[];
   diet: null | 'wegetariańska' | 'wegańska' | 'pescowegetariańska';
   hide_pantry_staples: boolean;
+  disliked_products?: string[];
+  disliked_recipes?: string[];
 };
 
 export function getProfile(): Profile {
@@ -268,8 +270,8 @@ export function createRecipe(input: RecipeInput) {
   const prods = new Map(getProducts([...new Set(input.ingredients.map((i) => i.product_id))]).map((p: Row) => [p.id, p]));
   for (const i of input.ingredients) if (!prods.has(i.product_id)) throw new HttpError(400, `Nieznany produkt: ${i.product_id}`);
 
-  const calc = calcNutrition(input.ingredients, servings);
-  const n = calc;
+  // makro: podane wprost (np. wariant przepisu z PDF = wartości PDF + różnica) albo policzone z produktów
+  const n = input.nutrition ?? calcNutrition(input.ingredients, servings);
   const origins = new Set([...prods.values()].map((p: Row) => p.origin));
   const allergens = [...new Set([...prods.values()].flatMap((p: Row) => p.allergens as string[]))].sort();
   const diet: string[] = [];

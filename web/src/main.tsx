@@ -28,7 +28,7 @@ function Page() {
   let page;
   if (!a) page = <Today />;
   else if (a === 'jadlospis') page = !b ? <PlansList /> : b === 'nowy' ? <PlanWizard templateId={query.get('template')} /> : <PlanDetail key={b} id={b} />;
-  else if (a === 'przepisy') page = !b ? <RecipesList /> : b === 'nowy' ? <RecipeEditor /> : <RecipeDetail key={b} id={b} />;
+  else if (a === 'przepisy') page = !b ? <RecipesList /> : b === 'nowy' ? <RecipeEditor /> : <RecipeDetail key={b} id={b} mealId={query.get('meal') ? Number(query.get('meal')) : null} />;
   else if (a === 'ai' && STATIC) page = <div className="empty"><h3>Kuchnia AI działa w wersji lokalnej</h3><p>Na GitHub Pages nie ma serwera, który mógłby bezpiecznie trzymać klucz do Claude API.</p><a className="btn" href={href('/przepisy')}>Przeglądaj przepisy</a></div>;
   else if (a === 'ai') page = <AiKitchen key={query.get('base') ?? ''} baseId={query.get('base')} initialPrompt={query.get('prompt')} initialPantry={query.get('pantry')} />;
   else if (a === 'zakupy') page = !b ? <ShoppingLists /> : <ShoppingDetail key={b} id={b} />;

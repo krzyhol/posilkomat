@@ -27,7 +27,7 @@ export function MealTicket({ meal, index, onChange, onSwap }: {
         <div className="row" style={{ alignItems: 'start', flexWrap: 'nowrap' }}>
           <Plate p={r.protein_g * meal.portions} c={r.carbs_g * meal.portions} f={r.fat_g * meal.portions} kcal={r.kcal * meal.portions} size={52} />
           <div style={{ minWidth: 0 }}>
-            <a className="name" href={href(`/przepisy/${r.id}`)}>{r.name}</a>
+            <a className="name" href={href(`/przepisy/${r.id}?meal=${meal.id}`)}>{r.name}</a>
             <div style={{ marginTop: 6 }}><Macros p={r.protein_g} c={r.carbs_g} f={r.fat_g} scale={meal.portions} /></div>
           </div>
         </div>
