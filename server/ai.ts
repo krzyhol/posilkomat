@@ -196,6 +196,52 @@ export function saveDraft(input: { draft: Omit<Draft, 'ingredients'> & { ingredi
   });
 }
 
+const EstimateSchema = z.object({
+  name: z.string().describe('Krótka nazwa posiłku po polsku, np. "Pizza margherita, 2 kawałki"'),
+  items: z.array(z.object({ name: z.string(), grams: z.number(), kcal: z.number() })),
+  kcal: z.number(), protein_g: z.number(), carbs_g: z.number(), fat_g: z.number(),
+  confidence: z.enum(['niska', 'średnia', 'wysoka']),
+  note: z.string().describe('Jedno zdanie: co założyłeś (wielkość porcji, sposób przyrządzenia)'),
+});
+
+/** Szacuje kalorie posiłku z opisu i/lub zdjęcia (posiłek spoza planu). */
+export async function estimateMeal(input: { text?: string; image?: { data: string; media_type: string } }) {
+  if (!input.text?.trim() && !input.image) throw new HttpError(400, 'Opisz posiłek albo dodaj zdjęcie');
+  const content: any[] = [];
+  if (input.image) {
+    if (!/^image\/(jpeg|png|webp|gif)$/.test(input.image.media_type)) throw new HttpError(400, 'Obsługiwane zdjęcia: JPG, PNG, WebP');
+    content.push({ type: 'image', source: { type: 'base64', media_type: input.image.media_type, data: input.image.data } });
+  }
+  content.push({ type: 'text', text: `Oszacuj kaloryczność i makro tego, co zjadłem.${input.text?.trim() ? `\nOpis: ${input.text.trim()}` : ''}\nPodaj realistyczne porcje typowe dla Polski, rozbij na składniki z gramaturą. Węglowodany ogółem.` });
+  let msg;
+  try {
+    msg = await ai().beta.messages.parse({
+      model: MODEL, max_tokens: 4000,
+      betas: ['server-side-fallback-2026-07-01'], fallbacks: 'default',
+      output_config: { effort: 'low', format: betaZodOutputFormat(EstimateSchema) },
+      system: 'Jesteś dietetykiem. Szacujesz kalorie posiłków na podstawie opisu lub zdjęcia. Gdy czegoś nie widać, przyjmij typową porcję i napisz to w note. Odpowiadasz wyłącznie JSON-em zgodnym ze schematem.',
+      messages: [{ role: 'user', content }],
+    } as any);
+  } catch (e) {
+    throw mapAiError(e);
+  }
+  if (msg.stop_reason === 'refusal') throw new HttpError(422, 'AI nie oszacowało tego posiłku – wpisz kalorie ręcznie.');
+  const out = (msg as any).parsed_output as z.infer<typeof EstimateSchema> | null;
+  if (!out) throw new HttpError(502, 'AI zwróciło odpowiedź w nieoczekiwanym formacie.');
+  return out;
+}
+
+function mapAiError(e: unknown) {
+  if (e instanceof Anthropic.AuthenticationError || e instanceof Anthropic.PermissionDeniedError)
+    return new HttpError(503, 'Brak dostępu do Claude API. Ustaw ANTHROPIC_API_KEY (albo zaloguj się: `ant auth login`) i uruchom serwer ponownie.');
+  if (e instanceof Anthropic.RateLimitError) return new HttpError(429, 'Za dużo zapytań do AI – spróbuj za chwilę.');
+  if (e instanceof Anthropic.APIConnectionError) return new HttpError(503, 'Nie udało się połączyć z Claude API.');
+  if (e instanceof Anthropic.APIError) return new HttpError(502, `Claude API: ${e.message}`);
+  if (e instanceof Error && /api key|apiKey|authToken|credentials/i.test(e.message))
+    return new HttpError(503, 'Brak klucza do Claude API. Ustaw ANTHROPIC_API_KEY (albo `ant auth login`) i uruchom serwer ponownie.');
+  return e;
+}
+
 export function aiStatus() {
   const env = !!(process.env.ANTHROPIC_API_KEY || process.env.ANTHROPIC_AUTH_TOKEN || process.env.ANTHROPIC_PROFILE);
   return { model: MODEL, credentials: env ? 'env' : 'unknown' };

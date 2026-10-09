@@ -4,7 +4,7 @@ import { DIETS, SLOT_NAME, SLOT_ORDER, addDays, dayMonth, dayNum, n, plural, tod
 import { go, href } from '../router.tsx';
 import { Chip, ErrorBox, Icon, Loading, Sheet, useToast } from '../components/ui.tsx';
 import { MealTicket, SwapSheet } from '../components/meals.tsx';
-import { KcalRuler, MacroBars } from './Today.tsx';
+import { ExtrasSection, KcalRuler, MacroBars } from './Today.tsx';
 
 // ------------------------------------------------------------------ lista
 export function PlansList() {
@@ -182,7 +182,7 @@ export function PlanWizard({ templateId }: { templateId?: string | null }) {
 
 // ------------------------------------------------------------------ szczegóły
 export function PlanDetail({ id }: { id: string }) {
-  const { data: plan, error, loading, setData } = useApi<Plan>(`/plans/${id}`);
+  const { data: plan, error, loading, setData, reload } = useApi<Plan>(`/plans/${id}`);
   const toast = useToast();
   const [dayIdx, setDayIdx] = useState(0);
   const [view, setView] = useState<'day' | 'week'>('day');
@@ -289,6 +289,7 @@ export function PlanDetail({ id }: { id: string }) {
                 </a>
               : <MealTicket key={m.id} meal={m} index={i} onChange={setData} onSwap={setSwap} />)}
           </div>
+          {!isTpl && <ExtrasSection day={day} onChanged={reload} />}
         </>
       )}
 

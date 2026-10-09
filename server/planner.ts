@@ -3,6 +3,7 @@ import { all, get, run, tx, qs, now, type Row } from './store.ts';
 import { HttpError } from './http.ts';
 import { searchClause, slug, plural, todayIso } from './text.ts';
 import { consumeForMeal } from './pantry.ts';
+import { extrasFor } from './extras.ts';
 import { getProfile, recipeSummaries } from './catalog.ts';
 
 const SLOT_SHARE: Record<string, number> = { breakfast: 0.225, second_breakfast: 0.225, lunch: 0.25, dinner: 0.22, snack: 0.08 };
@@ -180,11 +181,18 @@ export function getPlan(id: string) {
         totals.carbs_g += r.carbs_g * m.portions; totals.fat_g += r.fat_g * m.portions;
         if (m.status === 'eaten') totals.eaten_kcal += r.kcal * m.portions;
       }
+      // posiłki spoza planu liczą się do dnia (jako zjedzone)
+      const extras = d.date ? extrasFor(d.date) : [];
+      for (const e of extras) {
+        totals.kcal += e.kcal; totals.eaten_kcal += e.kcal;
+        totals.protein_g += e.protein_g; totals.carbs_g += e.carbs_g; totals.fat_g += e.fat_g;
+      }
       for (const k of Object.keys(totals) as (keyof typeof totals)[]) totals[k] = Math.round(totals[k]);
       return {
         id: d.id, day_number: d.day_number, date: d.date,
         micros: d.fiber_g != null ? { fiber_g: d.fiber_g, calcium_mg: d.calcium_mg, magnesium_mg: d.magnesium_mg } : null,
         totals,
+        extras,
         meals: dm.map((m) => ({
           id: m.id, slot: m.slot_id, time_from: m.time_from, time_to: m.time_to, portions: m.portions, status: m.status,
           leftover_of_meal_id: m.leftover_of_meal_id, leftover_from_day: m.leftover_of_meal_id ? dayOfMeal.get(m.leftover_of_meal_id) ?? null : null,

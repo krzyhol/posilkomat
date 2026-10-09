@@ -4,11 +4,12 @@ import { extname, join, normalize } from 'node:path';
 import { ROOT } from './db.ts';
 import { dispatch, route } from './http.ts';
 import './routes.ts';
-import { generateDraft, saveDraft, aiStatus } from './ai.ts';
+import { generateDraft, saveDraft, aiStatus, estimateMeal } from './ai.ts';
 
 route('GET', '/api/ai/status', () => aiStatus());
 route('POST', '/api/ai/draft', ({ body }) => generateDraft(body ?? {}));
 route('POST', '/api/ai/save', ({ body }) => saveDraft(body ?? {}));
+route('POST', '/api/ai/estimate', ({ body }) => estimateMeal(body ?? {}));
 
 // ---------------------------------------------------------------- statyczny frontend (po `npm run build`)
 const DIST = join(ROOT, 'web', 'dist');

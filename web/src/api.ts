@@ -29,10 +29,15 @@ export type PlanDay = {
   micros: { fiber_g: number; calcium_mg: number; magnesium_mg: number } | null;
   totals: { kcal: number; protein_g: number; carbs_g: number; fat_g: number; eaten_kcal: number };
   meals: PlanMeal[];
+  extras?: ExtraMeal[];
 };
 export type Plan = {
   id: string; name: string; type: 'template' | 'user'; start_date: string | null; target_kcal: number; people: number;
   source_file: string | null; source_note: string | null; days: PlanDay[];
+};
+export type ExtraMeal = {
+  id: number; date: string; slot: Slot | null; name: string; kcal: number; protein_g: number; carbs_g: number; fat_g: number;
+  source: 'manual' | 'ai_text' | 'ai_photo' | 'barcode'; note: string | null; replaced_meal_id: number | null;
 };
 export type PlanListItem = Omit<Plan, 'days'> & { days: number; end_date: string | null };
 export type Product = {

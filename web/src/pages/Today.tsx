@@ -1,8 +1,9 @@
 import { useState } from 'react';
-import { useApi, type Plan, type PlanDay, type PlanMeal } from '../api.ts';
+import { api, useApi, type Plan, type PlanDay, type PlanMeal, type ExtraMeal } from '../api.ts';
 import { dayMonth, n, todayIso, weekday } from '../format.ts';
 import { href } from '../router.tsx';
-import { ErrorBox, Loading } from '../components/ui.tsx';
+import { ErrorBox, Icon, Loading } from '../components/ui.tsx';
+import { ExtraMealSheet } from '../components/ExtraMeal.tsx';
 import { MealTicket, SwapSheet } from '../components/meals.tsx';
 
 type TodayRes = { date: string; plan: { id: string; name: string; target_kcal: number; people: number; days: number } | null; day: PlanDay | null; upcoming: { id: string; name: string; start: string } | null };
@@ -50,8 +51,34 @@ export function MacroBars({ day, target }: { day: PlanDay; target: number }) {
   );
 }
 
+const SOURCE: Record<ExtraMeal['source'], string> = { manual: 'wpisane', ai_text: 'z opisu · AI', ai_photo: 'ze zdjęcia · AI', barcode: 'z kodu kreskowego' };
+
+/** Posiłki spoza planu + przycisk dodawania */
+export function ExtrasSection({ day, onChanged }: { day: PlanDay; onChanged: () => void }) {
+  const [open, setOpen] = useState(false);
+  return (
+    <section className="section">
+      <div className="kicker">Poza planem</div>
+      <div className="stack" style={{ gap: 8 }}>
+        {(day.extras ?? []).map((e) => (
+          <div key={e.id} className="card" style={{ padding: '10px 14px', display: 'grid', gridTemplateColumns: '1fr auto auto', gap: 12, alignItems: 'center' }}>
+            <div>
+              <div>{e.name}</div>
+              <small className="muted">{SOURCE[e.source]}{e.replaced_meal_id ? ' · zamiast posiłku z planu' : ''} · B {n(e.protein_g, 0)} W {n(e.carbs_g, 0)} T {n(e.fat_g, 0)}</small>
+            </div>
+            <span className="kcal">{n(e.kcal, 0)} <small>kcal</small></span>
+            <button className="icon-btn" aria-label={`Usuń: ${e.name}`} onClick={async () => { await api(`/extras/${e.id}`, { method: 'DELETE' }); onChanged(); }}><Icon.x /></button>
+          </div>
+        ))}
+        <button className="btn ghost" style={{ justifySelf: 'start' }} onClick={() => setOpen(true)}><Icon.plus />Zjadłem coś spoza planu</button>
+      </div>
+      {open && day.date && <ExtraMealSheet date={day.date} meals={day.meals} onClose={() => setOpen(false)} onSaved={onChanged} />}
+    </section>
+  );
+}
+
 export default function Today() {
-  const { data, error, loading, setData } = useApi<TodayRes>(`/today?date=${todayIso()}`);
+  const { data, error, loading, setData, reload } = useApi<TodayRes>(`/today?date=${todayIso()}`);
   const [swap, setSwap] = useState<PlanMeal | null>(null);
   const onPlan = (plan: Plan) => {
     const day = plan.days.find((d) => d.date === data?.date) ?? null;
@@ -107,6 +134,7 @@ export default function Today() {
               {data.day.meals.map((m, i) => <MealTicket key={m.id} meal={m} index={i} onChange={onPlan} onSwap={setSwap} />)}
             </div>
           </section>
+          <ExtrasSection day={data.day} onChanged={reload} />
         </>
       )}
       {swap && <SwapSheet meal={swap} onClose={() => setSwap(null)} onSwapped={onPlan} />}
