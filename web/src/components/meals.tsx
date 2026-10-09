@@ -1,12 +1,12 @@
 import { useEffect, useMemo, useState } from 'react';
-import { api, useApi, type Plan, type PlanMeal, type PlanListItem, type SwapResult, type Slot } from '../api.ts';
+import { api, useApi, type Plan, type PlanMeal, type PlanMember, type PlanListItem, type SwapResult, type Slot } from '../api.ts';
 import { SLOT_NAME, SLOT_ORDER, n, plural, weekdayShort, dayNum } from '../format.ts';
 import { href, go } from '../router.tsx';
 import { Chip, ErrorBox, Icon, Loading, Macros, Plate, Sheet, useToast } from './ui.tsx';
 
 /** Bilecik posiłku w jadłospisie */
-export function MealTicket({ meal, index, onChange, onSwap }: {
-  meal: PlanMeal; index: number; onChange: (plan: Plan) => void; onSwap: (meal: PlanMeal) => void;
+export function MealTicket({ meal, index, onChange, onSwap, members }: {
+  meal: PlanMeal; index: number; onChange: (plan: Plan) => void; onSwap: (meal: PlanMeal) => void; members?: PlanMember[];
 }) {
   const toast = useToast();
   const r = meal.recipe;
@@ -31,6 +31,14 @@ export function MealTicket({ meal, index, onChange, onSwap }: {
             <div style={{ marginTop: 6 }}><Macros p={r.protein_g} c={r.carbs_g} f={r.fat_g} scale={meal.portions} /></div>
           </div>
         </div>
+        {members && members.length > 1 && (
+          <div className="family-line">
+            {members.map((mb) => {
+              const p = Math.round(meal.portions * mb.share * 20) / 20;
+              return <span key={mb.position}><b>{mb.name}</b> {n(p, 2)} <small>· {n(r.kcal * p, 0)} kcal</small></span>;
+            })}
+          </div>
+        )}
         <div className="chips">
           {meal.portions !== 1 && <span className="chip tiny warn">×{n(meal.portions)} porcji</span>}
           {meal.leftover_from_day && <span className="chip tiny good">z resztek · dzień {meal.leftover_from_day}</span>}

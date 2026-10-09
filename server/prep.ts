@@ -3,6 +3,7 @@ import { all } from './store.ts';
 import { HttpError } from './http.ts';
 import { todayIso } from './text.ts';
 import { getPlan } from './planner.ts';
+import { portionMultiplier } from './household.ts';
 
 const addDays = (iso: string, n: number) => {
   const d = new Date(iso + 'T12:00:00Z');
@@ -48,7 +49,7 @@ export function prepPlan(planId: string, q: { day_from?: number; day_to?: number
   const startDate = plan.days.find((d: any) => d.day_number === from)!.date as string;
   let prepDate = q.prep_date ?? addDays(startDate, -1);
   if (!q.prep_date && prepDate < todayIso()) prepDate = todayIso();
-  const people = plan.people ?? 1;
+  const people = portionMultiplier(planId);
 
   const meals = all<MealRow>(`SELECT m.id, d.date, d.day_number, m.slot_id AS slot, m.recipe_id, m.portions, m.leftover_of_meal_id
       FROM plan_meals m JOIN plan_days d ON d.id = m.plan_day_id

@@ -5,10 +5,10 @@ import { href } from '../router.tsx';
 import { ErrorBox, Icon, Loading } from '../components/ui.tsx';
 import { ExtraMealSheet } from '../components/ExtraMeal.tsx';
 import { ScanFlow } from '../components/Barcode.tsx';
-import type { Product } from '../api.ts';
+import type { Product, PlanMember } from '../api.ts';
 import { MealTicket, SwapSheet } from '../components/meals.tsx';
 
-type TodayRes = { date: string; plan: { id: string; name: string; target_kcal: number; people: number; days: number } | null; day: PlanDay | null; upcoming: { id: string; name: string; start: string } | null };
+type TodayRes = { date: string; plan: { id: string; name: string; target_kcal: number; people: number; days: number; members?: PlanMember[] } | null; day: PlanDay | null; upcoming: { id: string; name: string; start: string } | null };
 
 const GREETING = () => {
   const h = new Date().getHours();
@@ -153,7 +153,7 @@ export default function Today() {
           <section className="section">
             <div className="kicker">Rozkład posiłków</div>
             <div className="stack">
-              {data.day.meals.map((m, i) => <MealTicket key={m.id} meal={m} index={i} onChange={onPlan} onSwap={setSwap} />)}
+              {data.day.meals.map((m, i) => <MealTicket key={m.id} meal={m} index={i} onChange={onPlan} onSwap={setSwap} members={data.plan!.members} />)}
             </div>
           </section>
           <ExtrasSection day={data.day} onChanged={reload} />

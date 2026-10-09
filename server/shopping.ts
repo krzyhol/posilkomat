@@ -3,6 +3,7 @@ import { all, get, run, tx, qs } from './store.ts';
 import { HttpError } from './http.ts';
 import { getProfile } from './catalog.ts';
 import { pantryCoverage } from './pantry.ts';
+import { portionMultiplier } from './household.ts';
 
 const COUNTABLE = ['sztuka', 'opakowanie', 'kromka', 'ząbek', 'plaster', 'kostka', 'łodyga', 'listek', 'szklanka'];
 
@@ -57,7 +58,8 @@ export function createShoppingList(planId: string, input: { day_from?: number; d
   if (!plan) throw new HttpError(404, 'Nie ma takiego jadłospisu');
   const range = get('SELECT MIN(day_number) AS a, MAX(day_number) AS b FROM plan_days WHERE plan_id = ?', planId)!;
   const from = Math.max(range.a, input.day_from ?? range.a), to = Math.min(range.b, input.day_to ?? range.b);
-  const people = input.people ?? plan.people ?? 1;
+  // tryb rodzinny: suma przeliczników porcji domowników (np. 1 + 0,8 + 0,6); bez domowników – liczba osób
+  const people = input.people ?? portionMultiplier(planId);
 
   const rows = all(`SELECT n.product_id, n.amount_g, r.name AS recipe
       FROM v_plan_product_needs n JOIN plan_meals m ON m.id = n.plan_meal_id JOIN recipes r ON r.id = m.recipe_id

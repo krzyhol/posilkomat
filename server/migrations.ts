@@ -38,6 +38,22 @@ export const MIGRATIONS: string[] = [
   // 4 – kody kreskowe produktów (skaner, Open Food Facts)
   `ALTER TABLE products ADD COLUMN barcode TEXT;
    CREATE UNIQUE INDEX products_barcode ON products(barcode) WHERE barcode IS NOT NULL;`,
+  // 5 – tryb rodzinny: domownicy z własnym celem kalorii; jadłospis zapamiętuje, kto je i z jakim przelicznikiem porcji
+  `CREATE TABLE household_members (
+     id          INTEGER PRIMARY KEY,
+     name        TEXT NOT NULL,
+     target_kcal REAL NOT NULL CHECK (target_kcal BETWEEN 600 AND 5000),
+     position    INTEGER NOT NULL DEFAULT 0
+   );
+   CREATE TABLE plan_members (
+     plan_id     TEXT NOT NULL REFERENCES plans(id) ON DELETE CASCADE,
+     position    INTEGER NOT NULL,
+     member_id   INTEGER REFERENCES household_members(id) ON DELETE SET NULL,
+     name        TEXT NOT NULL,
+     target_kcal REAL NOT NULL,
+     share       REAL NOT NULL CHECK (share > 0),
+     PRIMARY KEY (plan_id, position)
+   );`,
 ];
 
 type Exec = { exec(sql: string): void; version(): number };

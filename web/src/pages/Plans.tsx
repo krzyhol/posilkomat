@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
-import { api, useApi, useMeta, type Plan, type PlanListItem, type PlanMeal, type Profile, type ShoppingList } from '../api.ts';
+import { api, useApi, useMeta, type Plan, type PlanListItem, type PlanMeal, type PlanMember, type Profile, type ShoppingList } from '../api.ts';
+import type { Member } from './Family.tsx';
 import { DIETS, SLOT_NAME, SLOT_ORDER, addDays, dayMonth, dayNum, n, plural, todayIso, weekday, weekdayShort } from '../format.ts';
 import { go, href } from '../router.tsx';
 import { Chip, ErrorBox, Icon, Loading, Sheet, useToast } from '../components/ui.tsx';
@@ -77,6 +78,10 @@ export function PlanWizard({ templateId }: { templateId?: string | null }) {
   const [diet, setDiet] = useState<string | null>(null);
   const [exclude, setExclude] = useState<string[]>([]);
   const [mealPrep, setMealPrep] = useState(true);
+  const household = useApi<Member[]>('/household');
+  const [members, setMembers] = useState<number[] | null>(null);
+  const hh = household.data ?? [];
+  const chosen = members ?? hh.map((m) => m.id);
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState<string | null>(null);
 
@@ -93,8 +98,8 @@ export function PlanWizard({ templateId }: { templateId?: string | null }) {
     try {
       const plan = await api<Plan>('/plans', {
         body: mode === 'template'
-          ? { mode, template_id: tpl, start_date: start, days, target_kcal: kcal, people }
-          : { mode, start_date: start, days, target_kcal: kcal, people, slots, diet, exclude_allergens: exclude, meal_prep: mealPrep },
+          ? { mode, template_id: tpl, start_date: start, days, target_kcal: kcal, people, members: chosen }
+          : { mode, start_date: start, days, target_kcal: kcal, people, slots, diet, exclude_allergens: exclude, meal_prep: mealPrep, members: chosen },
       });
       toast('Jadłospis gotowy.');
       go(`/jadlospis/${plan.id}`);
@@ -127,7 +132,14 @@ export function PlanWizard({ templateId }: { templateId?: string | null }) {
 
           <div className="grid-2">
             <label className="field"><span>Od kiedy</span><input type="date" className="input" value={start} onChange={(e) => setStart(e.target.value)} /></label>
-            <label className="field"><span>Dla ilu osób</span><input type="number" min={1} max={12} className="input" value={people} onChange={(e) => setPeople(+e.target.value)} /></label>
+            {hh.length
+              ? <div className="field"><span>Kto je</span>
+                  <div className="chips">
+                    <span className="chip on" style={{ cursor: 'default' }}>Ty</span>
+                    {hh.map((m) => <Chip key={m.id} on={chosen.includes(m.id)} onClick={() => setMembers(chosen.includes(m.id) ? chosen.filter((x) => x !== m.id) : [...chosen, m.id])}>{m.name} · {m.target_kcal}</Chip>)}
+                  </div>
+                </div>
+              : <label className="field"><span>Dla ilu osób</span><input type="number" min={1} max={12} className="input" value={people} onChange={(e) => setPeople(+e.target.value)} /></label>}
           </div>
 
           <div className="field"><span>Na ile dni</span>
@@ -168,7 +180,7 @@ export function PlanWizard({ templateId }: { templateId?: string | null }) {
           <p style={{ margin: '12px 0 4px', fontFamily: 'var(--display)', fontSize: 22, lineHeight: 1.2 }}>
             {days} {plural(days, 'dzień', 'dni', 'dni')} od {weekday(start)}, {dayMonth(start)}
           </p>
-          <p className="muted" style={{ margin: 0 }}>do {dayMonth(addDays(start, days - 1))} · {kcal} kcal · {people} {plural(people, 'osoba', 'osoby', 'osób')}</p>
+          <p className="muted" style={{ margin: 0 }}>do {dayMonth(addDays(start, days - 1))} · {kcal} kcal · {hh.length ? `Ty + ${chosen.length} ${plural(chosen.length, 'domownik', 'domowników', 'domowników')}` : `${people} ${plural(people, 'osoba', 'osoby', 'osób')}`}</p>
           <hr className="hr" />
           <button className="btn tomato" style={{ width: '100%' }} onClick={submit} disabled={busy || (mode === 'auto' && !slots.length)}>
             {busy ? <span className="spinner" /> : <Icon.pot />}{mode === 'auto' ? 'Ułóż jadłospis' : 'Skopiuj szablon'}
@@ -218,6 +230,7 @@ export function PlanDetail({ id }: { id: string }) {
             cel {n(plan.target_kcal, 0)} kcal · średnio {n(avg, 0)} kcal · {plan.days.length} dni{plan.people > 1 ? ` · ${plan.people} os.` : ''}
             {plan.source_note ? ` · ${plan.source_note}` : ''}
           </p>
+          {!isTpl && <MembersLine members={plan.members ?? []} planId={plan.id} onSynced={reload} />}
         </div>
         <div className="row">
           {isTpl
@@ -287,7 +300,7 @@ export function PlanDetail({ id }: { id: string }) {
                   <div><div className="kicker">{SLOT_NAME[m.slot]}</div><h3 style={{ marginTop: 6 }}>{m.recipe.name}</h3></div>
                   <span className="kcal">{Math.round(m.recipe.kcal)} <small>kcal</small></span>
                 </a>
-              : <MealTicket key={m.id} meal={m} index={i} onChange={setData} onSwap={setSwap} />)}
+              : <MealTicket key={m.id} meal={m} index={i} onChange={setData} onSwap={setSwap} members={plan.members} />)}
           </div>
           {!isTpl && <ExtrasSection day={day} onChanged={reload} />}
         </>
@@ -297,6 +310,17 @@ export function PlanDetail({ id }: { id: string }) {
       {swap && <SwapSheet meal={swap} onClose={() => setSwap(null)} onSwapped={setData} />}
       {shop && <ShoppingSheet plan={plan} onClose={() => setShop(false)} />}
     </>
+  );
+}
+
+function MembersLine({ members, planId, onSynced }: { members: PlanMember[]; planId: string; onSynced: () => void }) {
+  const toast = useToast();
+  const sync = async () => { await api(`/plans/${planId}/members/sync`, { body: {} }); onSynced(); toast('Porcje domowników zaktualizowane.'); };
+  return (
+    <div className="row" style={{ marginTop: 8, gap: 8 }}>
+      {members.length > 1 && <span className="muted" style={{ fontSize: 14 }}>Dla: {members.map((m) => `${m.name} ×${n(m.share, 2)}`).join(' · ')}</span>}
+      <button className="btn link small" onClick={sync}>{members.length > 1 ? 'Odśwież domowników' : 'Dodaj domowników z ustawień'}</button>
+    </div>
   );
 }
 

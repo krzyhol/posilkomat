@@ -34,7 +34,9 @@ export type PlanDay = {
 export type Plan = {
   id: string; name: string; type: 'template' | 'user'; start_date: string | null; target_kcal: number; people: number;
   source_file: string | null; source_note: string | null; days: PlanDay[];
+  members?: PlanMember[];
 };
+export type PlanMember = { position: number; member_id: number | null; name: string; target_kcal: number; share: number };
 export type ExtraMeal = {
   id: number; date: string; slot: Slot | null; name: string; kcal: number; protein_g: number; carbs_g: number; fat_g: number;
   source: 'manual' | 'ai_text' | 'ai_photo' | 'barcode'; note: string | null; replaced_meal_id: number | null;

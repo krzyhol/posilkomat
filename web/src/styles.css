@@ -372,3 +372,7 @@ h3 { font-size: 20px; line-height: 1.2; }
 .scan-frame::after { content: ''; position: absolute; left: 6%; right: 6%; top: 50%; height: 2px; background: var(--tomato); animation: scanline 1.6s ease-in-out infinite; }
 @keyframes scanline { 50% { transform: translateY(-18px); } }
 .scan-msg { position: absolute; inset: auto 0 12px; text-align: center; color: #fff; font: 600 12px/1 var(--mono); letter-spacing: 0.1em; }
+
+/* porcje domowników na bileciku */
+.family-line { display: flex; flex-wrap: wrap; gap: 4px 14px; font-size: 13px; padding: 6px 10px; border-radius: 8px; background: var(--card-2); border: 1px dashed var(--line-2); }
+.family-line small { color: var(--muted); font-family: var(--mono); }

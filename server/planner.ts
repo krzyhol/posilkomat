@@ -4,6 +4,7 @@ import { HttpError } from './http.ts';
 import { searchClause, slug, plural, todayIso } from './text.ts';
 import { consumeForMeal } from './pantry.ts';
 import { extrasFor } from './extras.ts';
+import { snapshotMembers, planMembers } from './household.ts';
 import { getProfile, recipeSummaries, dislikeClause } from './catalog.ts';
 
 const SLOT_SHARE: Record<string, number> = { breakfast: 0.225, second_breakfast: 0.225, lunch: 0.25, dinner: 0.22, snack: 0.08 };
@@ -50,7 +51,7 @@ function pool(slot: string, opts: { diet?: string | null; exclude: string[] }): 
 export type NewPlan = {
   name?: string; start_date?: string; days?: number; target_kcal?: number; people?: number;
   mode?: 'auto' | 'template'; template_id?: string; slots?: string[]; diet?: string | null;
-  exclude_allergens?: string[]; meal_prep?: boolean;
+  exclude_allergens?: string[]; meal_prep?: boolean; members?: number[] | null;
 };
 
 export function createPlan(input: NewPlan) {
@@ -79,6 +80,7 @@ export function createPlan(input: NewPlan) {
           run(`INSERT INTO plan_meals (plan_day_id, position, slot_id, time_from, time_to, recipe_id, portions) VALUES (?,?,?,?,?,?,?)`,
             dayId, m.position, m.slot_id, m.time_from, m.time_to, m.recipe_id, Math.round(m.portions * scale * 10) / 10);
       });
+      snapshotMembers(id, target, input.members);
     });
     return getPlan(id);
   }
@@ -141,6 +143,7 @@ export function createPlan(input: NewPlan) {
         if (!m.leftoverOf) mealIds.set(`${d}|${m.slot}`, mid);
       });
     });
+    snapshotMembers(id, target, input.members);
   });
   return getPlan(id);
 }
@@ -173,6 +176,7 @@ export function getPlan(id: string) {
   const dayOfMeal = new Map(meals.map((m) => [m.id, days.find((d) => d.id === m.plan_day_id)?.day_number]));
   return {
     ...plan,
+    members: planMembers(id),
     days: days.map((d) => {
       const dm = meals.filter((m) => m.plan_day_id === d.id).sort((a, b) => SLOT_ORDER.indexOf(a.slot_id) - SLOT_ORDER.indexOf(b.slot_id) || a.position - b.position);
       const totals = { kcal: 0, protein_g: 0, carbs_g: 0, fat_g: 0, eaten_kcal: 0 };
@@ -223,7 +227,7 @@ export function getToday(date = todayIso()) {
   }
   const plan = getPlan(day.plan_id);
   const d = plan.days.find((x: Row) => x.id === day.id);
-  return { date, plan: { id: plan.id, name: plan.name, target_kcal: plan.target_kcal, people: plan.people, days: plan.days.length }, day: d, upcoming: null };
+  return { date, plan: { id: plan.id, name: plan.name, target_kcal: plan.target_kcal, people: plan.people, days: plan.days.length, members: plan.members }, day: d, upcoming: null };
 }
 
 function mealRow(id: number) {

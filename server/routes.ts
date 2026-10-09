@@ -8,6 +8,7 @@ import { ingredientSubstitutes, createVariant } from './substitutes.ts';
 import { prepPlan } from './prep.ts';
 import { weightLog, saveWeight, deleteWeight } from './weight.ts';
 import { addExtra, deleteExtra } from './extras.ts';
+import { listHousehold, addMember, updateMember, deleteMember, syncPlanMembers } from './household.ts';
 import { listPantry, setPantryItem, removePantryItem, stockFromList, pantrySuggestions } from './pantry.ts';
 import { createShoppingList, getShoppingList, listShoppingLists, patchItem, addItem, deleteItem, deleteList } from './shopping.ts';
 
@@ -48,6 +49,12 @@ route('DELETE', '/api/weight/:date', ({ params }) => deleteWeight(params.date));
 
 route('POST', '/api/extras', ({ body }) => addExtra(body ?? {}));
 route('DELETE', '/api/extras/:id', ({ params }) => deleteExtra(Number(params.id)));
+
+route('GET', '/api/household', () => listHousehold());
+route('POST', '/api/household', ({ body }) => addMember(body ?? {}));
+route('PATCH', '/api/household/:id', ({ params, body }) => updateMember(Number(params.id), body ?? {}));
+route('DELETE', '/api/household/:id', ({ params }) => deleteMember(Number(params.id)));
+route('POST', '/api/plans/:id/members/sync', ({ params }) => syncPlanMembers(params.id));
 
 route('GET', '/api/today', ({ query }) => getToday(query.get('date') ?? undefined));
 route('GET', '/api/plans', () => listPlans());

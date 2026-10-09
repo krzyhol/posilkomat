@@ -4,7 +4,7 @@ import { DIETS, n } from '../format.ts';
 import { Chip, ErrorBox, Loading, useToast } from '../components/ui.tsx';
 
 export function YouTabs({ on }: { on: 'profile' | 'weight' | 'dislikes' | 'family' }) {
-  const tabs = [['profile', 'Profil', '#/ustawienia'], ['weight', 'Waga', '#/ustawienia/waga'], ['dislikes', 'Nie lubię', '#/ustawienia/nie-lubie']] as const;
+  const tabs = [['profile', 'Profil', '#/ustawienia'], ['weight', 'Waga', '#/ustawienia/waga'], ['dislikes', 'Nie lubię', '#/ustawienia/nie-lubie'], ['family', 'Rodzina', '#/ustawienia/rodzina']] as const;
   return (
     <div className="tabs" style={{ marginBottom: 18 }}>
       {tabs.map(([k, label, h]) => <button key={k} className={on === k ? 'on' : ''} onClick={() => (location.hash = h)}>{label}</button>)}
