@@ -51,6 +51,8 @@ export type Meta = {
 export type Profile = {
   name: string | null; target_kcal: number; people: number; excluded_allergens: string[];
   diet: null | 'wegetariańska' | 'wegańska' | 'pescowegetariańska'; hide_pantry_staples: boolean;
+  goal_weight_kg?: number | null; goal_rate_kg_week?: number | null;
+  disliked_products?: string[]; disliked_recipes?: string[];
 };
 export type ShoppingItem = {
   id: number; product_id: string | null; name: string; amount_g: number | null; household_hint: string | null;

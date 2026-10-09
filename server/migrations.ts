@@ -11,6 +11,14 @@ export const MIGRATIONS: string[] = [
    ALTER TABLE shopping_items ADD COLUMN pantry_g REAL;
    ALTER TABLE shopping_items ADD COLUMN need_g REAL;
    ALTER TABLE shopping_items ADD COLUMN stocked INTEGER NOT NULL DEFAULT 0;`,
+  // 2 – dziennik wagi
+  `CREATE TABLE weight_log (
+     date       TEXT PRIMARY KEY,
+     weight_kg  REAL NOT NULL CHECK (weight_kg > 20 AND weight_kg < 400),
+     waist_cm   REAL,
+     note       TEXT,
+     created_at TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%SZ','now'))
+   );`,
 ];
 
 type Exec = { exec(sql: string): void; version(): number };

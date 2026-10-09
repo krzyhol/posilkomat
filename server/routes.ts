@@ -6,6 +6,7 @@ import {
 import { createPlan, listPlans, getPlan, deletePlan, getToday, patchMeal, addMeal, deleteMeal, swapCandidates } from './planner.ts';
 import { ingredientSubstitutes, createVariant } from './substitutes.ts';
 import { prepPlan } from './prep.ts';
+import { weightLog, saveWeight, deleteWeight } from './weight.ts';
 import { listPantry, setPantryItem, removePantryItem, stockFromList, pantrySuggestions } from './pantry.ts';
 import { createShoppingList, getShoppingList, listShoppingLists, patchItem, addItem, deleteItem, deleteList } from './shopping.ts';
 
@@ -35,6 +36,10 @@ route('PATCH', '/api/recipes/:id', ({ params, body }) => patchRecipe(params.id, 
 
 route('GET', '/api/recipes/:id/substitutes/:position', ({ params }) => ingredientSubstitutes(params.id, Number(params.position)));
 route('POST', '/api/recipes/:id/variant', ({ params, body }) => createVariant(params.id, body ?? {}));
+
+route('GET', '/api/weight', () => weightLog());
+route('POST', '/api/weight', ({ body }) => saveWeight(body ?? {}));
+route('DELETE', '/api/weight/:date', ({ params }) => deleteWeight(params.date));
 
 route('GET', '/api/today', ({ query }) => getToday(query.get('date') ?? undefined));
 route('GET', '/api/plans', () => listPlans());

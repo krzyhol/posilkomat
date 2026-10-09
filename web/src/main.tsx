@@ -13,6 +13,7 @@ import { ShoppingLists, ShoppingDetail } from './pages/Shopping.tsx';
 import Settings from './pages/Settings.tsx';
 import Pantry from './pages/Pantry.tsx';
 import PrepDay from './pages/PrepDay.tsx';
+import Weight from './pages/Weight.tsx';
 
 const NAV = [
   { path: '/', label: 'Dziś', short: 'Dziś', icon: Icon.today, match: (p: string) => p === '/' },
@@ -20,7 +21,7 @@ const NAV = [
   { path: '/przepisy', label: 'Przepisy', short: 'Przepisy', icon: Icon.book, match: (p: string) => p.startsWith('/przepisy') },
   { path: '/ai', label: 'Kuchnia AI', short: 'AI', icon: Icon.spark, match: (p: string) => p.startsWith('/ai') },
   { path: '/zakupy', label: 'Zakupy', short: 'Zakupy', icon: Icon.cart, match: (p: string) => p.startsWith('/zakupy') || p.startsWith('/spizarnia') },
-  { path: '/ustawienia', label: 'Ustawienia', short: 'Ty', icon: Icon.cog, match: (p: string) => p.startsWith('/ustawienia') },
+  { path: '/ustawienia', label: 'Ty', short: 'Ty', icon: Icon.cog, match: (p: string) => p.startsWith('/ustawienia') },
 ];
 
 function Page() {
@@ -36,6 +37,7 @@ function Page() {
   else if (a === 'ai') page = <AiKitchen key={query.get('base') ?? ''} baseId={query.get('base')} initialPrompt={query.get('prompt')} initialPantry={query.get('pantry')} />;
   else if (a === 'zakupy') page = !b ? <ShoppingLists /> : <ShoppingDetail key={b} id={b} />;
   else if (a === 'spizarnia') page = <Pantry />;
+  else if (a === 'ustawienia' && b === 'waga') page = <Weight />;
   else if (a === 'ustawienia') page = <Settings />;
   else page = <div className="empty"><h3>Tu nic nie ma</h3><a href={href('/')}>Wróć na dziś</a></div>;
 

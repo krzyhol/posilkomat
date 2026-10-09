@@ -33,6 +33,8 @@ export type Profile = {
   diet: null | 'wegetariańska' | 'wegańska' | 'pescowegetariańska';
   hide_pantry_staples: boolean;
   disliked_products?: string[];
+  goal_weight_kg?: number | null;
+  goal_rate_kg_week?: number | null;
   disliked_recipes?: string[];
 };
 

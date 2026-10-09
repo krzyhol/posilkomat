@@ -3,6 +3,15 @@ import { api, useApi, useMeta, STATIC, type Profile } from '../api.ts';
 import { DIETS, n } from '../format.ts';
 import { Chip, ErrorBox, Loading, useToast } from '../components/ui.tsx';
 
+export function YouTabs({ on }: { on: 'profile' | 'weight' | 'dislikes' | 'family' }) {
+  const tabs = [['profile', 'Profil', '#/ustawienia'], ['weight', 'Waga', '#/ustawienia/waga']] as const;
+  return (
+    <div className="tabs" style={{ marginBottom: 18 }}>
+      {tabs.map(([k, label, h]) => <button key={k} className={on === k ? 'on' : ''} onClick={() => (location.hash = h)}>{label}</button>)}
+    </div>
+  );
+}
+
 export default function Settings() {
   const meta = useMeta();
   const toast = useToast();
@@ -32,6 +41,7 @@ export default function Settings() {
           <p className="lede">Z tych ustawień korzystają kreator jadłospisu, podmiana posiłków i AI.</p>
         </div>
       </header>
+      <YouTabs on="profile" />
       <div className="two-col">
         <div className="stack" style={{ gap: 24 }}>
           <div className="field"><span>Cel dzienny · <b className="num">{p.target_kcal} kcal</b></span>
