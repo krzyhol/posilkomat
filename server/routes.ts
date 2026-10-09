@@ -1,7 +1,7 @@
 // Trasy API wspólne dla serwera Node i wersji przeglądarkowej (GitHub Pages)
 import { route, need } from './http.ts';
 import {
-  getMeta, getProfile, saveProfile, searchProducts, createProduct, listRecipes, getRecipe, createRecipe, patchRecipe, calcNutrition,
+  getMeta, getProfile, saveProfile, searchProducts, createProduct, productByBarcode, setBarcode, listRecipes, getRecipe, createRecipe, patchRecipe, calcNutrition,
 } from './catalog.ts';
 import { createPlan, listPlans, getPlan, deletePlan, getToday, patchMeal, addMeal, deleteMeal, swapCandidates } from './planner.ts';
 import { ingredientSubstitutes, createVariant } from './substitutes.ts';
@@ -21,6 +21,8 @@ route('PUT', '/api/settings', ({ body }) => saveProfile(body ?? {}));
 
 route('GET', '/api/products', ({ query }) => searchProducts(query.get('q') ?? '', num(query.get('limit')) ?? 20));
 route('POST', '/api/products', ({ body }) => createProduct(body));
+route('GET', '/api/products/by-barcode/:code', ({ params }) => need(productByBarcode(params.code), 'Nie znamy jeszcze tego kodu'));
+route('PUT', '/api/products/:id/barcode', ({ params, body }) => setBarcode(params.id, String(body?.barcode ?? '')));
 route('POST', '/api/nutrition', ({ body }) => calcNutrition(body?.ingredients ?? [], body?.servings ?? 1));
 
 route('GET', '/api/recipes', ({ query }) => listRecipes({

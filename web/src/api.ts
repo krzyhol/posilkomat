@@ -43,6 +43,7 @@ export type PlanListItem = Omit<Plan, 'days'> & { days: number; end_date: string
 export type Product = {
   id: string; name: string; category_id: string; kcal: number; protein_g: number; fat_g: number; carbs_g: number; fiber_g: number;
   measures: { unit: string; grams: number }[]; allergens: string[]; base_recipe_id: string | null; pantry_staple: boolean;
+  barcode?: string | null;
 };
 export type Meta = {
   slots: { id: Slot; name: string; position: number; time_from: string | null; time_to: string | null }[];

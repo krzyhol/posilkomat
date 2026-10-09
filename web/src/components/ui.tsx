@@ -21,6 +21,7 @@ export const Icon = {
   back: () => <svg viewBox="0 0 24 24" {...P}><path d="M15 5l-7 7 7 7" /></svg>,
   copy: () => <svg viewBox="0 0 24 24" {...P}><rect x="8.5" y="8.5" width="11" height="11" rx="2" /><path d="M15.5 8.5V6a1.5 1.5 0 0 0-1.5-1.5H6A1.5 1.5 0 0 0 4.5 6v8A1.5 1.5 0 0 0 6 15.5h2.5" /></svg>,
   trash: () => <svg viewBox="0 0 24 24" {...P}><path d="M4.5 7h15M9.5 7V4.5h5V7M6.5 7l1 13h9l1-13" /></svg>,
+  scan: () => <svg viewBox="0 0 24 24" {...P}><path d="M3.5 7.5v-3h3M17.5 4.5h3v3M20.5 16.5v3h-3M6.5 19.5h-3v-3M7.5 8v8M10.5 8v8M13 8v8M16.5 8v8" /></svg>,
   pot: () => <svg viewBox="0 0 24 24" {...P}><path d="M4 10.5h16v5a4 4 0 0 1-4 4H8a4 4 0 0 1-4-4z" /><path d="M2 10.5h20M9 7c0-1.5 1-1.5 1-3M14 7c0-1.5 1-1.5 1-3" /></svg>,
 };
 

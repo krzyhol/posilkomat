@@ -35,6 +35,9 @@ export const MIGRATIONS: string[] = [
      created_at       TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%SZ','now'))
    );
    CREATE INDEX extra_meals_date ON extra_meals(date);`,
+  // 4 – kody kreskowe produktów (skaner, Open Food Facts)
+  `ALTER TABLE products ADD COLUMN barcode TEXT;
+   CREATE UNIQUE INDEX products_barcode ON products(barcode) WHERE barcode IS NOT NULL;`,
 ];
 
 type Exec = { exec(sql: string): void; version(): number };

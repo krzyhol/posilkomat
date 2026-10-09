@@ -4,6 +4,8 @@ import { dayMonth, n, todayIso, weekday } from '../format.ts';
 import { href } from '../router.tsx';
 import { ErrorBox, Icon, Loading } from '../components/ui.tsx';
 import { ExtraMealSheet } from '../components/ExtraMeal.tsx';
+import { ScanFlow } from '../components/Barcode.tsx';
+import type { Product } from '../api.ts';
 import { MealTicket, SwapSheet } from '../components/meals.tsx';
 
 type TodayRes = { date: string; plan: { id: string; name: string; target_kcal: number; people: number; days: number } | null; day: PlanDay | null; upcoming: { id: string; name: string; start: string } | null };
@@ -72,8 +74,28 @@ export function ExtrasSection({ day, onChanged }: { day: PlanDay; onChanged: () 
         ))}
         <button className="btn ghost" style={{ justifySelf: 'start' }} onClick={() => setOpen(true)}><Icon.plus />Zjadłem coś spoza planu</button>
       </div>
-      {open && day.date && <ExtraMealSheet date={day.date} meals={day.meals} onClose={() => setOpen(false)} onSaved={onChanged} />}
+      {open && day.date && <ExtraMealSheet date={day.date} meals={day.meals} onClose={() => setOpen(false)} onSaved={onChanged}
+        scanSlot={(onFound) => <ScanPortion onFound={onFound} />} />}
     </section>
+  );
+}
+
+/** Skan → produkt → ile zjadłeś → kalorie dla posiłku spoza planu */
+function ScanPortion({ onFound }: { onFound: (e: { name: string; kcal: number; protein_g: number; carbs_g: number; fat_g: number }) => void }) {
+  const [p, setP] = useState<Product | null>(null);
+  const [g, setG] = useState('');
+  if (!p) return <ScanFlow onProduct={(x) => { setP(x); setG(String(x.measures.find((m) => m.unit === 'opakowanie')?.grams ?? 100)); }} />;
+  const grams = Number(g.replace(',', '.')) || 0;
+  const f = grams / 100;
+  return (
+    <div className="stack">
+      <p style={{ margin: 0 }}><b>{p.name}</b> · {n(p.kcal, 0)} kcal / 100 g</p>
+      <label className="field"><span>Ile zjadłeś (g)</span><input className="input num" inputMode="decimal" value={g} onChange={(e) => setG(e.target.value)} autoFocus /></label>
+      <button className="btn" disabled={!grams} onClick={() => onFound({ name: `${p.name} (${n(grams, 0)} g)`, kcal: Math.round(p.kcal * f),
+        protein_g: Math.round(p.protein_g * f * 10) / 10, carbs_g: Math.round(p.carbs_g * f * 10) / 10, fat_g: Math.round(p.fat_g * f * 10) / 10 })}>
+        <Icon.check />Policz: {n(p.kcal * f, 0)} kcal
+      </button>
+    </div>
   );
 }
 

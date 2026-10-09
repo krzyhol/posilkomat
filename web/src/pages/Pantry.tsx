@@ -2,7 +2,8 @@ import { useState } from 'react';
 import { api, useApi, STATIC, type PantryItem, type PantrySuggestion, type Product, type Slot } from '../api.ts';
 import { SLOT_NAME, SLOT_ORDER, n, plural } from '../format.ts';
 import { href } from '../router.tsx';
-import { Chip, ErrorBox, Icon, Loading, Plate, useToast } from '../components/ui.tsx';
+import { Chip, ErrorBox, Icon, Loading, Plate, Sheet, useToast } from '../components/ui.tsx';
+import { ScanFlow } from '../components/Barcode.tsx';
 import { ProductPicker } from '../components/ProductPicker.tsx';
 
 export function ShopTabs({ on }: { on: 'lists' | 'pantry' }) {
@@ -26,6 +27,7 @@ export default function Pantry() {
   const [amount, setAmount] = useState('');
   const [expires, setExpires] = useState('');
   const [pickerKey, setPickerKey] = useState(0);
+  const [scanning, setScanning] = useState(false);
 
   const add = async () => {
     if (!pick) return;
@@ -56,13 +58,26 @@ export default function Pantry() {
       <section className="card pad stack" style={{ gap: 12 }}>
         <div className="kicker">Dodaj do spiżarni</div>
         <div className="row" style={{ alignItems: 'end' }}>
-          <div style={{ flex: '2 1 240px' }}><ProductPicker key={pickerKey} value="" onPick={setPick} placeholder="np. jajka, ryż basmati, passata…" /></div>
+          <div style={{ flex: '2 1 240px' }}><ProductPicker key={pickerKey} value={pick?.name ?? ''} onPick={setPick} placeholder="np. jajka, ryż basmati, passata…" /></div>
           <input className="input num" style={{ flex: '0 1 110px' }} inputMode="decimal" placeholder="ile g" value={amount} onChange={(e) => setAmount(e.target.value.replace(',', '.'))} aria-label="Ilość w gramach" />
           <input className="input" style={{ flex: '0 1 160px' }} type="date" value={expires} onChange={(e) => setExpires(e.target.value)} aria-label="Termin ważności" />
           <button className="btn" onClick={add} disabled={!pick}><Icon.plus />Dodaj</button>
+          <button className="btn ghost" onClick={() => setScanning(true)}><Icon.scan />Skanuj kod</button>
         </div>
         {pick && pick.measures[0] && <small className="muted">1 {pick.measures[0].unit} ≈ {n(pick.measures[0].grams)} g</small>}
       </section>
+
+      {scanning && (
+        <Sheet onClose={() => setScanning(false)} kicker="Spiżarnia" title="Zeskanuj produkt">
+          <ScanFlow onProduct={(p) => {
+            setPick(p); setPickerKey((k) => k + 1);
+            const pack = p.measures.find((m) => m.unit === 'opakowanie');
+            setAmount(pack ? String(pack.grams) : '');
+            setScanning(false);
+            toast(`${p.name} – uzupełnij ilość i dodaj.`);
+          }} />
+        </Sheet>
+      )}
 
       {expiring.length > 0 && (
         <p className="note" style={{ marginTop: 16 }}>Kończy się termin: <b>{expiring.map((i) => i.name).join(', ')}</b> – propozycje niżej biorą to pod uwagę.</p>

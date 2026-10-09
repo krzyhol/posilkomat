@@ -53,7 +53,7 @@ export function saveProfile(patch: Partial<Profile>): Profile {
 
 // ------------------------------------------------------------------ produkty
 const PRODUCT_COLS = `p.id, p.name, p.category_id, p.origin, p.pantry_staple, p.shoppable, p.kcal, p.protein_g, p.fat_g,
-  p.carbs_g, p.fiber_g, p.nutrition_source, p.base_recipe_id, p.source_type`;
+  p.carbs_g, p.fiber_g, p.nutrition_source, p.base_recipe_id, p.source_type, p.barcode`;
 
 function withMeasures(rows: Row[]) {
   if (!rows.length) return rows;
@@ -98,6 +98,18 @@ export function searchProducts(q: string, limit = 20) {
   return withMeasures(scored);
 }
 
+export function productByBarcode(code: string) {
+  const r = get(`SELECT ${PRODUCT_COLS} FROM products p WHERE p.barcode = ?`, code.trim());
+  return r ? withMeasures([r])[0] : null;
+}
+
+/** Przypisuje kod kreskowy istniejącemu produktowi z katalogu (np. „ten jogurt to nasz Jogurt skyr”). */
+export function setBarcode(productId: string, code: string) {
+  run('UPDATE products SET barcode = NULL WHERE barcode = ?', code);
+  run('UPDATE products SET barcode = ? WHERE id = ?', code, productId);
+  return getProducts([productId])[0];
+}
+
 export function getProducts(ids: string[]) {
   if (!ids.length) return [];
   return withMeasures(all(`SELECT ${PRODUCT_COLS} FROM products p WHERE p.id IN (${qs(ids.length)})`, ...ids));
@@ -124,8 +136,12 @@ export function matchProduct(name: string): { product: Row | null; confidence: '
 export function createProduct(p: {
   name: string; category_id: string; origin?: string; allergens?: string[];
   kcal: number; protein_g: number; fat_g: number; carbs_g: number; fiber_g?: number;
-  nutrition_source?: string; source_type?: string; measures?: { unit: string; grams: number }[];
+  nutrition_source?: string; source_type?: string; measures?: { unit: string; grams: number }[]; barcode?: string | null;
 }) {
+  if (p.barcode) {
+    const existing = get('SELECT id FROM products WHERE barcode = ?', p.barcode);
+    if (existing) return getProducts([existing.id])[0];
+  }
   if (!p.name?.trim()) throw new HttpError(400, 'Podaj nazwę produktu');
   let id = slug(p.name);
   for (let n = 2; get('SELECT 1 FROM products WHERE id = ?', id); n++) id = `${slug(p.name)}-${n}`;
@@ -136,6 +152,7 @@ export function createProduct(p: {
       p.nutrition_source ?? 'user', p.source_type ?? 'user');
     for (const a of p.allergens ?? []) run('INSERT OR IGNORE INTO product_allergens VALUES (?, ?)', id, a);
     (p.measures ?? []).forEach((m, i) => run('INSERT OR IGNORE INTO product_measures VALUES (?, ?, ?, ?)', id, m.unit, m.grams, i));
+    if (p.barcode) run('UPDATE products SET barcode = ? WHERE id = ?', p.barcode, id);
   });
   return getProducts([id])[0];
 }
