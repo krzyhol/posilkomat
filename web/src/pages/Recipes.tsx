@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import { api, useApi, useMeta, STATIC, type Recipe, type RecipeSummary, type Slot } from '../api.ts';
+import { api, useApi, useMeta, STATIC, type Profile, type Recipe, type RecipeSummary, type Slot } from '../api.ts';
 import { DIETS, SLOT_NAME, SLOT_ORDER, SOURCE_LABEL, n, plural, qtyLabel, unitLabel } from '../format.ts';
 import { go, href } from '../router.tsx';
 import { Chip, ErrorBox, Icon, Loading, Macros, Plate, useToast } from '../components/ui.tsx';
@@ -35,12 +35,13 @@ export function RecipesList() {
   const [dish, setDish] = useState('');
   const [source, setSource] = useState('');
   const [fav, setFav] = useState(false);
+  const [showDisliked, setShowDisliked] = useState(false);
   const [kcal, setKcal] = useState('');
   const [limit, setLimit] = useState(48);
   useEffect(() => { const t = setTimeout(() => setDq(q), 250); return () => clearTimeout(t); }, [q]);
-  useEffect(() => setLimit(48), [dq, slot, diet, flavor, dish, source, fav, kcal]);
+  useEffect(() => setLimit(48), [dq, slot, diet, flavor, dish, source, fav, kcal, showDisliked]);
   const [kmin, kmax] = kcal ? kcal.split('-') : ['', ''];
-  const params = new URLSearchParams(Object.entries({ q: dq, slot, diet, flavor, dish, source, favorite: fav ? '1' : '', kcal_min: kmin, kcal_max: kmax, limit: String(limit) }).filter(([, v]) => v) as [string, string][]);
+  const params = new URLSearchParams(Object.entries({ q: dq, slot, diet, flavor, dish, source, favorite: fav ? '1' : '', hide_disliked: showDisliked ? '' : '1', kcal_min: kmin, kcal_max: kmax, limit: String(limit) }).filter(([, v]) => v) as [string, string][]);
   const { data, error } = useApi<{ total: number; items: RecipeSummary[] }>(`/recipes?${params}`);
 
   return (
@@ -64,6 +65,7 @@ export function RecipesList() {
           <Chip on={flavor === 'słodki'} onClick={() => setFlavor(flavor === 'słodki' ? '' : 'słodki')}>słodkie</Chip>
           <Chip on={flavor === 'wytrawny'} onClick={() => setFlavor(flavor === 'wytrawny' ? '' : 'wytrawny')}>wytrawne</Chip>
           <Chip on={fav} onClick={() => setFav(!fav)}>★ ulubione</Chip>
+          <Chip on={showDisliked} onClick={() => setShowDisliked(!showDisliked)}>pokaż też nielubiane</Chip>
         </div>
         <div className="row">
           <select className="select" style={{ width: 'auto' }} value={diet} onChange={(e) => setDiet(e.target.value)}>
@@ -104,6 +106,7 @@ export function RecipeDetail({ id, mealId }: { id: string; mealId?: number | nul
   const meta = useMeta();
   const toast = useToast();
   const { data: r, error, loading, setData } = useApi<Recipe>(`/recipes/${id}`);
+  const profile = useApi<Profile>('/settings');
   const [servings, setServings] = useState<number | null>(null);
   const [done, setDone] = useState<Set<number>>(new Set());
   const [adding, setAdding] = useState(false);
@@ -140,6 +143,12 @@ export function RecipeDetail({ id, mealId }: { id: string; mealId?: number | nul
     } finally { setSavingVariant(false); }
   };
 
+  const disliked = !!r && (profile.data?.disliked_recipes ?? []).includes(r.id);
+  const dislike = async (body: { product_id?: string; recipe_id?: string; on: boolean }, msg: string) => {
+    profile.setData(await api<Profile>('/dislikes', { body }));
+    toast(msg);
+  };
+
   const fav = async () => {
     const out = await api<Recipe>(`/recipes/${r.id}`, { method: 'PATCH', body: { is_favorite: !r.is_favorite } });
     setData(out);
@@ -172,6 +181,9 @@ export function RecipeDetail({ id, mealId }: { id: string; mealId?: number | nul
               <button className="btn tomato" onClick={() => setAdding(true)}><Icon.plan />Do jadłospisu</button>
               <button className="btn ghost" onClick={fav} aria-pressed={r.is_favorite}><Icon.star on={r.is_favorite} />{r.is_favorite ? 'Ulubione' : 'Do ulubionych'}</button>
               {!STATIC && <a className="btn ghost" href={href(`/ai?base=${r.id}`)}><Icon.spark />Przerób z AI</a>}
+              <button className="btn link small" onClick={() => dislike({ recipe_id: r.id, on: !disliked }, disliked ? 'Wraca do jadłospisów.' : 'Nie zobaczysz go w nowych jadłospisach.')}>
+                {disliked ? 'Jednak lubię' : 'Nie lubię tego dania'}
+              </button>
             </div>
           )}
         </div>
@@ -274,7 +286,8 @@ export function RecipeDetail({ id, mealId }: { id: string; mealId?: number | nul
       </div>
       {swapPos !== null && (
         <IngredientSwapSheet recipeId={r.id} position={swapPos} onClose={() => setSwapPos(null)}
-          onPick={(o) => setSubs((m) => new Map(m).set(swapPos, o))} />
+          onPick={(o) => setSubs((m) => new Map(m).set(swapPos, o))}
+          onDislike={(pid, name) => dislike({ product_id: pid, on: true }, `${name} – omijamy w nowych jadłospisach.`)} />
       )}
       {adding && <AddToPlanSheet recipeId={r.id} recipeName={r.name} slots={r.slots} onClose={() => setAdding(false)} />}
     </>

@@ -1,7 +1,7 @@
 // Spiżarnia: zapasy, zużywanie przy „zjedzone”, przenoszenie zakupów i „co ugotuję z tego, co mam”
 import { all, get, run, tx, now } from './store.ts';
 import { HttpError } from './http.ts';
-import { recipeSummaries } from './catalog.ts';
+import { recipeSummaries, getProfile } from './catalog.ts';
 import { todayIso } from './text.ts';
 
 const daysTo = (iso: string | null) => {
@@ -73,12 +73,16 @@ export function pantrySuggestions(opts: { slot?: string; limit?: number; exclude
       FROM recipe_ingredients ri JOIN recipes r ON r.id = ri.recipe_id JOIN products p ON p.id = ri.product_id
       WHERE r.kind = 'meal' AND r.status = 'active' AND p.pantry_staple = 0 AND p.shoppable = 1
         ${opts.slot ? `AND r.id IN (SELECT recipe_id FROM recipe_slots WHERE slot_id = ?)` : ''}`, ...(opts.slot ? [opts.slot] : []));
+  const prof = getProfile();
+  const banned = prof.disliked_products ?? [];
+  const bannedRecipes = new Set([...(prof.disliked_recipes ?? []),
+    ...(banned.length ? all(`SELECT DISTINCT recipe_id FROM recipe_ingredients WHERE product_id IN (${banned.map(() => '?').join(',')})`, ...banned).map((x) => x.recipe_id) : [])]);
   const byRecipe = new Map<string, typeof rows>();
   for (const r of rows) byRecipe.set(r.recipe_id, [...(byRecipe.get(r.recipe_id) ?? []), r]);
 
   const scored: { id: string; have: string[]; missing: string[]; expiring: string[]; score: number }[] = [];
   for (const [id, ings] of byRecipe) {
-    if (opts.exclude_recipes?.has(id)) continue;
+    if (opts.exclude_recipes?.has(id) || bannedRecipes.has(id)) continue;
     const hit: string[] = [], miss: string[] = [], expiring: string[] = [];
     for (const i of ings) {
       const p = have.get(i.product_id);

@@ -4,7 +4,7 @@ import { HttpError } from './http.ts';
 import { searchClause, slug, plural, todayIso } from './text.ts';
 import { consumeForMeal } from './pantry.ts';
 import { extrasFor } from './extras.ts';
-import { getProfile, recipeSummaries } from './catalog.ts';
+import { getProfile, recipeSummaries, dislikeClause } from './catalog.ts';
 
 const SLOT_SHARE: Record<string, number> = { breakfast: 0.225, second_breakfast: 0.225, lunch: 0.25, dinner: 0.22, snack: 0.08 };
 const SLOT_ORDER = ['breakfast', 'second_breakfast', 'lunch', 'dinner', 'snack'];
@@ -39,6 +39,8 @@ function pool(slot: string, opts: { diet?: string | null; exclude: string[] }): 
     where.push(`r.id NOT IN (SELECT recipe_id FROM recipe_allergens WHERE allergen_id IN (${qs(opts.exclude.length)}))`);
     p.push(...opts.exclude);
   }
+  const dl = dislikeClause();
+  if (dl) { where.push(dl.sql); p.push(...dl.params); }
   const rows = all(`SELECT r.id, r.kcal, r.servings, r.flavor,
       (SELECT group_concat(tag) FROM recipe_tags t WHERE t.recipe_id = r.id AND t.tag_type = 'dish_type') AS dish
     FROM recipes r WHERE ${where.join(' AND ')}`, ...p);
@@ -301,6 +303,8 @@ export function swapCandidates(mealId: number, q: { q?: string; flavor?: string;
     where.push(`r.id NOT IN (SELECT recipe_id FROM recipe_allergens WHERE allergen_id IN (${qs(profile.excluded_allergens.length)}))`);
     p.push(...profile.excluded_allergens);
   }
+  const dl = dislikeClause(profile);
+  if (dl) { where.push(dl.sql); p.push(...dl.params); }
   const ids = all(`SELECT r.id FROM recipes r WHERE ${where.join(' AND ')}`, ...p).map((r) => r.id);
   if (!ids.length) return { current: { ...cur, portions: m.portions, kcal_total: Math.round(targetKcal) }, items: [] };
 

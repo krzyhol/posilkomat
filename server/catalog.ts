@@ -43,6 +43,43 @@ export function getProfile(): Profile {
   return JSON.parse(r?.value ?? '{}');
 }
 
+/** Warunek SQL wykluczający dania z nielubianymi produktami i nielubiane dania (alias tabeli przepisów: r). */
+export function dislikeClause(profile = getProfile()): { sql: string; params: string[] } | null {
+  const prods = profile.disliked_products ?? [], recs = profile.disliked_recipes ?? [];
+  const parts: string[] = [];
+  if (prods.length) parts.push(`r.id NOT IN (SELECT recipe_id FROM recipe_ingredients WHERE product_id IN (${qs(prods.length)}))`);
+  if (recs.length) parts.push(`r.id NOT IN (${qs(recs.length)})`);
+  return parts.length ? { sql: parts.join(' AND '), params: [...prods, ...recs] } : null;
+}
+
+/** Dodaje / usuwa produkt albo danie z listy „nie lubię”. */
+export function toggleDislike(input: { product_id?: string; recipe_id?: string; on: boolean }) {
+  const p = getProfile();
+  const upd = (arr: string[] | undefined, id: string) => (input.on ? [...new Set([...(arr ?? []), id])] : (arr ?? []).filter((x) => x !== id));
+  if (input.product_id) p.disliked_products = upd(p.disliked_products, input.product_id);
+  if (input.recipe_id) p.disliked_recipes = upd(p.disliked_recipes, input.recipe_id);
+  return saveProfile(p);
+}
+
+/** „Nie lubię” – szczegóły do ekranu + podpowiedzi z zachowania (często pomijane / podmieniane dania). */
+export function dislikesInfo() {
+  const p = getProfile();
+  const prods = p.disliked_products ?? [], recs = p.disliked_recipes ?? [];
+  const products = prods.length ? all(`SELECT id, name FROM products WHERE id IN (${qs(prods.length)}) ORDER BY name`, ...prods) : [];
+  const recipes = recs.length ? all(`SELECT id, name FROM recipes WHERE id IN (${qs(recs.length)}) ORDER BY name`, ...recs) : [];
+  const suggestions = all(`SELECT r.id, r.name, SUM(x.n) AS times FROM (
+        SELECT recipe_id AS rid, COUNT(*) AS n FROM plan_meals pm JOIN plan_days d ON d.id = pm.plan_day_id JOIN plans pl ON pl.id = d.plan_id
+          WHERE pl.type = 'user' AND pm.status = 'skipped' GROUP BY recipe_id
+        UNION ALL
+        SELECT swapped_from_recipe_id, COUNT(*) FROM plan_meals WHERE swapped_from_recipe_id IS NOT NULL GROUP BY swapped_from_recipe_id
+      ) x JOIN recipes r ON r.id = x.rid GROUP BY r.id HAVING times >= 2 ORDER BY times DESC LIMIT 12`)
+    .filter((s) => !recs.includes(s.id));
+  // dania, które ominie generator jadłospisów
+  const c = dislikeClause(p);
+  const hidden = c ? get(`SELECT COUNT(*) AS n FROM recipes r WHERE r.kind = 'meal' AND r.status = 'active' AND NOT (${c.sql})`, ...c.params)!.n : 0;
+  return { products, recipes, suggestions, hidden_recipes: hidden };
+}
+
 export function saveProfile(patch: Partial<Profile>): Profile {
   const p = { ...getProfile(), ...patch };
   p.target_kcal = Math.max(1000, Math.min(5000, Math.round(Number(p.target_kcal) || 2200)));
@@ -160,7 +197,7 @@ export function createProduct(p: {
 // ------------------------------------------------------------------ przepisy
 export type RecipeFilter = {
   q?: string; slot?: string; diet?: string; dish?: string; exclude?: string[]; source?: string;
-  favorite?: boolean; kcal_min?: number; kcal_max?: number; flavor?: string; feature?: string;
+  favorite?: boolean; kcal_min?: number; kcal_max?: number; flavor?: string; feature?: string; hide_disliked?: boolean;
   kind?: 'meal' | 'base'; limit?: number; offset?: number; sort?: 'mix' | 'name' | 'kcal' | 'protein' | 'new';
 };
 
@@ -206,6 +243,7 @@ export function listRecipes(f: RecipeFilter) {
   if (f.source === 'pdf') where.push(`r.source_type = 'pdf_import'`);
   if (f.source === 'mine') where.push(`r.source_type IN ('user', 'ai_generated', 'ai_modified')`);
   if (f.favorite) where.push(`r.is_favorite = 1`);
+  if (f.hide_disliked) { const d = dislikeClause(); if (d) { where.push(d.sql); p.push(...d.params); } }
   if (f.kcal_min) { where.push(`r.kcal >= ?`); p.push(f.kcal_min); }
   if (f.kcal_max) { where.push(`r.kcal <= ?`); p.push(f.kcal_max); }
   // mix = stałe „przetasowanie” (te same wyniki przy kolejnych stronach), żeby lista nie zaczynała się od przekąsek na „A”

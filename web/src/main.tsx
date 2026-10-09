@@ -14,6 +14,7 @@ import Settings from './pages/Settings.tsx';
 import Pantry from './pages/Pantry.tsx';
 import PrepDay from './pages/PrepDay.tsx';
 import Weight from './pages/Weight.tsx';
+import Dislikes from './pages/Dislikes.tsx';
 
 const NAV = [
   { path: '/', label: 'Dziś', short: 'Dziś', icon: Icon.today, match: (p: string) => p === '/' },
@@ -38,6 +39,7 @@ function Page() {
   else if (a === 'zakupy') page = !b ? <ShoppingLists /> : <ShoppingDetail key={b} id={b} />;
   else if (a === 'spizarnia') page = <Pantry />;
   else if (a === 'ustawienia' && b === 'waga') page = <Weight />;
+  else if (a === 'ustawienia' && b === 'nie-lubie') page = <Dislikes />;
   else if (a === 'ustawienia') page = <Settings />;
   else page = <div className="empty"><h3>Tu nic nie ma</h3><a href={href('/')}>Wróć na dziś</a></div>;
 

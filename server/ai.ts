@@ -106,6 +106,7 @@ export async function generateDraft(input: GenerateInput) {
     `Liczba porcji: ${input.servings ?? base?.r.servings ?? 1}`,
     diet ? `Dieta: ${diet}` : null,
     exclude.length ? `Bez alergenów: ${exclude.join(', ')}` : null,
+    profile.disliked_products?.length ? `Nie lubię i nie używaj: ${getProducts(profile.disliked_products).map((x: any) => x.name).join(', ')}` : null,
     input.pantry?.trim() ? `Mam w domu i chcę to wykorzystać: ${input.pantry.trim()}` : null,
   ].filter(Boolean).join('\n');
 

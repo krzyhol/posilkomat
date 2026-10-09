@@ -1,7 +1,7 @@
 // Trasy API wspólne dla serwera Node i wersji przeglądarkowej (GitHub Pages)
 import { route, need } from './http.ts';
 import {
-  getMeta, getProfile, saveProfile, searchProducts, createProduct, productByBarcode, setBarcode, listRecipes, getRecipe, createRecipe, patchRecipe, calcNutrition,
+  getMeta, getProfile, saveProfile, toggleDislike, dislikesInfo, searchProducts, createProduct, productByBarcode, setBarcode, listRecipes, getRecipe, createRecipe, patchRecipe, calcNutrition,
 } from './catalog.ts';
 import { createPlan, listPlans, getPlan, deletePlan, getToday, patchMeal, addMeal, deleteMeal, swapCandidates } from './planner.ts';
 import { ingredientSubstitutes, createVariant } from './substitutes.ts';
@@ -19,6 +19,8 @@ route('GET', '/api/meta', () => getMeta());
 route('GET', '/api/settings', () => getProfile());
 route('PUT', '/api/settings', ({ body }) => saveProfile(body ?? {}));
 
+route('GET', '/api/dislikes', () => dislikesInfo());
+route('POST', '/api/dislikes', ({ body }) => toggleDislike(body ?? {}));
 route('GET', '/api/products', ({ query }) => searchProducts(query.get('q') ?? '', num(query.get('limit')) ?? 20));
 route('POST', '/api/products', ({ body }) => createProduct(body));
 route('GET', '/api/products/by-barcode/:code', ({ params }) => need(productByBarcode(params.code), 'Nie znamy jeszcze tego kodu'));
@@ -28,7 +30,7 @@ route('POST', '/api/nutrition', ({ body }) => calcNutrition(body?.ingredients ??
 route('GET', '/api/recipes', ({ query }) => listRecipes({
   q: query.get('q') ?? undefined, slot: query.get('slot') ?? undefined, diet: query.get('diet') ?? undefined,
   dish: query.get('dish') ?? undefined, exclude: list(query.get('exclude')), source: query.get('source') ?? undefined,
-  favorite: query.get('favorite') === '1', kcal_min: num(query.get('kcal_min')), kcal_max: num(query.get('kcal_max')),
+  favorite: query.get('favorite') === '1', hide_disliked: query.get('hide_disliked') === '1', kcal_min: num(query.get('kcal_min')), kcal_max: num(query.get('kcal_max')),
   flavor: query.get('flavor') ?? undefined, feature: query.get('feature') ?? undefined,
   kind: (query.get('kind') as 'meal' | 'base') ?? undefined, limit: num(query.get('limit')), offset: num(query.get('offset')),
   sort: (query.get('sort') as any) ?? undefined,
