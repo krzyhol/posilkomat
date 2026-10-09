@@ -73,7 +73,16 @@ export class ApiError extends Error {
   }
 }
 
+/** Wersja na GitHub Pages: bez serwera, baza w przeglądarce, bez Kuchni AI. */
+export const STATIC = import.meta.env.VITE_STATIC === '1';
+
 export async function api<T = any>(path: string, opts: { method?: string; body?: unknown } = {}): Promise<T> {
+  if (STATIC) {
+    const { localApi } = await import('./local/engine.ts');
+    const r = await localApi(opts.method ?? (opts.body ? 'POST' : 'GET'), `/api${path}`, opts.body);
+    if (r.status >= 400) throw new ApiError(r.status, (r.data as any)?.error ?? `Błąd ${r.status}`);
+    return r.data as T;
+  }
   const res = await fetch(`/api${path}`, {
     method: opts.method ?? (opts.body ? 'POST' : 'GET'),
     headers: opts.body ? { 'content-type': 'application/json' } : undefined,

@@ -1,5 +1,5 @@
 // Lista zakupów z jadłospisu: sumowanie po produktach, rozwijanie półproduktów, miary domowe, alejki sklepu
-import { all, get, run, tx, qs } from './db.ts';
+import { all, get, run, tx, qs } from './store.ts';
 import { HttpError } from './http.ts';
 import { getProfile } from './catalog.ts';
 

@@ -1,6 +1,6 @@
 // Słowniki, ustawienia, produkty i przepisy
-import { all, get, run, tx, qs, now, type Row } from './db.ts';
-import { fold, ftsQuery, slug, round } from './text.ts';
+import { all, get, run, tx, qs, now, type Row } from './store.ts';
+import { fold, searchClause, searchText, slug, round } from './text.ts';
 import { HttpError } from './http.ts';
 
 // ------------------------------------------------------------------ meta i ustawienia
@@ -171,13 +171,8 @@ function decorate(rows: Row[]) {
 export function listRecipes(f: RecipeFilter) {
   const where: string[] = [`r.status = 'active'`, `r.kind = ?`];
   const p: (string | number)[] = [f.kind ?? 'meal'];
-  if (f.q?.trim()) {
-    const m = ftsQuery(f.q);
-    if (m) {
-      where.push(`r.id IN (SELECT recipe_id FROM recipes_fts WHERE recipes_fts MATCH ?)`);
-      p.push(m);
-    }
-  }
+  const s = f.q ? searchClause(f.q) : null;
+  if (s) { where.push(s.sql); p.push(...s.params); }
   if (f.slot) { where.push(`r.id IN (SELECT recipe_id FROM recipe_slots WHERE slot_id = ?)`); p.push(f.slot); }
   if (f.diet) { where.push(`r.id IN (SELECT recipe_id FROM recipe_tags WHERE tag_type = 'diet' AND tag = ?)`); p.push(f.diet); }
   if (f.dish) { where.push(`r.id IN (SELECT recipe_id FROM recipe_tags WHERE tag_type = 'dish_type' AND tag = ?)`); p.push(f.dish); }
@@ -313,8 +308,8 @@ export function createRecipe(input: RecipeInput) {
         id, k + 1, i.product_id, i.name?.trim() || prods.get(i.product_id)!.name, i.amount_g, i.household_qty ?? null,
         i.household_unit ?? null, i.group_name ?? null, i.note ?? null));
     input.steps.filter((s) => s.text?.trim()).forEach((s, k) => run('INSERT INTO recipe_steps VALUES (?, ?, ?, ?, NULL)', id, k + 1, s.text.trim(), s.section ?? null));
-    run('INSERT INTO recipes_fts (recipe_id, name, ingredients) VALUES (?, ?, ?)', id, fold(input.name),
-      fold(input.ingredients.map((i) => i.name ?? prods.get(i.product_id)!.name).join(', ')));
+    run('INSERT INTO recipe_search (recipe_id, text) VALUES (?, ?)', id,
+      searchText(`${input.name} ${input.ingredients.map((i) => i.name ?? prods.get(i.product_id)!.name).join(' ')}`));
   });
   return getRecipe(id);
 }

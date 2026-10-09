@@ -2,7 +2,7 @@
 import Anthropic from '@anthropic-ai/sdk';
 import { betaZodOutputFormat } from '@anthropic-ai/sdk/helpers/beta/zod';
 import { z } from 'zod';
-import { all } from './db.ts';
+import { all } from './store.ts';
 import { HttpError } from './http.ts';
 import { createProduct, createRecipe, getProfile, getRecipe, matchProduct, getProducts } from './catalog.ts';
 import { round } from './text.ts';

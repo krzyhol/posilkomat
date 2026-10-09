@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { api, useApi, useMeta, type Profile } from '../api.ts';
+import { api, useApi, useMeta, STATIC, type Profile } from '../api.ts';
 import { DIETS, n } from '../format.ts';
 import { Chip, ErrorBox, Loading, useToast } from '../components/ui.tsx';
 
@@ -7,7 +7,7 @@ export default function Settings() {
   const meta = useMeta();
   const toast = useToast();
   const { data, error } = useApi<Profile>('/settings');
-  const ai = useApi<{ model: string; credentials: string }>('/ai/status');
+  const ai = useApi<{ model: string; credentials: string }>(STATIC ? null : '/ai/status');
   const [p, setP] = useState<Profile | null>(null);
   // Mifflin–St Jeor jako podpowiedź – dane o ciele nie są zapisywane
   const [calc, setCalc] = useState({ sex: 'k', age: 30, weight: 65, height: 168, activity: 1.5 });
@@ -79,13 +79,28 @@ export default function Settings() {
             </div>
             <small className="muted">Wzór Mifflina–St Jeora – orientacyjnie, nie zastępuje dietetyka.</small>
           </div>
-          <div className="card pad">
+          {STATIC && (
+            <div className="card pad">
+              <div className="kicker">Twoje dane</div>
+              <p style={{ margin: '10px 0 12px', fontSize: 14 }}>
+                To wersja w przeglądarce: jadłospisy, listy zakupów i własne przepisy zapisują się tylko na tym urządzeniu. Kuchnia AI działa w wersji uruchamianej lokalnie.
+              </p>
+              <button className="btn small ghost" onClick={async () => {
+                if (!confirm('Usunąć wszystkie Twoje jadłospisy, listy i własne przepisy z tej przeglądarki?')) return;
+                const { resetLocalData } = await import('../local/engine.ts');
+                await resetLocalData();
+                location.hash = '#/';
+                location.reload();
+              }}>Wyczyść moje dane</button>
+            </div>
+          )}
+          {!STATIC && <div className="card pad">
             <div className="kicker">AI</div>
             <p style={{ margin: '10px 0 0', fontSize: 14 }}>
               Model: <span className="mono">{ai.data?.model ?? '…'}</span><br />
               {ai.data?.credentials === 'env' ? 'Klucz API wykryty.' : <>Ustaw <span className="mono">ANTHROPIC_API_KEY</span> przed uruchomieniem serwera, żeby włączyć Kuchnię AI.</>}
             </p>
-          </div>
+          </div>}
         </aside>
       </div>
     </>

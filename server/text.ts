@@ -7,13 +7,18 @@ const PL: Record<string, string> = { ą: 'a', ć: 'c', ę: 'e', ł: 'l', ń: 'n'
 export const slug = (t: string) =>
   t.toLowerCase().replace(/[ąćęłńóśźż]/g, (c) => PL[c]).replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '').slice(0, 80);
 
-/** zapytanie FTS5: każde słowo jako prefiks, cudzysłowy chronią przed składnią FTS */
-export const ftsQuery = (q: string) =>
-  fold(q)
-    .split(/[^a-z0-9]+/)
-    .filter((w) => w.length > 1)
-    .map((w) => `"${w}"*`)
-    .join(' ');
+/** tekst do tabeli recipe_search: słowa oddzielone spacją, z wiodącą spacją */
+export const searchText = (t: string) => ' ' + fold(t).replace(/[^a-z0-9]+/g, ' ').trim();
+
+/** Warunek wyszukiwania: każde słowo zapytania musi być początkiem słowa w nazwie lub składnikach. */
+export function searchClause(q: string): { sql: string; params: string[] } | null {
+  const words = fold(q).split(/[^a-z0-9]+/).filter((w) => w.length > 1);
+  if (!words.length) return null;
+  return {
+    sql: `r.id IN (SELECT recipe_id FROM recipe_search WHERE ${words.map(() => 'text LIKE ?').join(' AND ')})`,
+    params: words.map((w) => `% ${w}%`),
+  };
+}
 
 /** odmiana liczebnika: 1 składnik, 2 składniki, 5 składników */
 export const plural = (n: number, one: string, few: string, many: string) => {

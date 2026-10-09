@@ -179,10 +179,11 @@ CREATE TABLE recipe_steps (
   PRIMARY KEY (recipe_id, position)
 );
 
--- wyszukiwanie pełnotekstowe (nazwa + składniki); tekst jest „złożony” (małe litery, bez ogonków, ł→l)
-CREATE VIRTUAL TABLE recipes_fts USING fts5(
-  recipe_id UNINDEXED, name, ingredients,
-  tokenize = 'unicode61 remove_diacritics 2'
+-- wyszukiwanie po nazwie i składnikach: tekst „złożony” (małe litery, bez ogonków, ł→l, same słowa oddzielone spacją),
+-- zapytanie to prefiksy słów przez LIKE '% słowo%'. Bez FTS5, żeby ta sama baza działała w przeglądarce (sql.js).
+CREATE TABLE recipe_search (
+  recipe_id TEXT PRIMARY KEY REFERENCES recipes(id) ON DELETE CASCADE,
+  text      TEXT NOT NULL
 );
 
 -- ------------------------------------------------------------------ wymienniki

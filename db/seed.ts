@@ -30,7 +30,7 @@ db.exec(readFileSync(join(root, 'db', 'schema.sql'), 'utf8'));
 
 const bool = (b: boolean) => (b ? 1 : 0);
 // to samo składanie tekstu stosuje serwer dla zapytań (server/text.ts): „Łosoś” ≡ „losos”
-const fold = (t: string) => t.toLowerCase().replace(/ł/g, 'l').normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+const fold = (t: string) => ' ' + t.toLowerCase().replace(/ł/g, 'l').normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^a-z0-9]+/g, ' ').trim();
 const prep = (sql: string) => db.prepare(sql);
 
 db.exec('BEGIN');
@@ -77,7 +77,7 @@ try {
   const ring = prep(`INSERT INTO recipe_ingredients (recipe_id, position, product_id, name, amount_g, household_qty, household_unit,
     group_name, note, optional) VALUES (?,?,?,?,?,?,?,?,?,?)`);
   const rstep = prep('INSERT INTO recipe_steps VALUES (?, ?, ?, ?, ?)');
-  const fts = prep('INSERT INTO recipes_fts (recipe_id, name, ingredients) VALUES (?, ?, ?)');
+  const search = prep('INSERT INTO recipe_search (recipe_id, text) VALUES (?, ?)');
   for (const r of recipes) {
     const n = r.nutrition_per_serving, s = r.source, y = r.yield ?? {};
     rec.run(r.id, r.kind, r.name, r.description, r.servings, n.kcal, n.protein_g, n.carbs_g, n.fat_g, r.tags.flavor ?? null,
@@ -92,7 +92,7 @@ try {
     r.ingredients.forEach((i: any, k: number) => ring.run(r.id, k + 1, i.product_id, i.name, i.amount_g,
       i.household?.qty ?? null, i.household?.unit ?? null, i.group, i.note ?? null, bool(i.optional)));
     for (const st of r.steps) rstep.run(r.id, st.order, st.text, st.section, st.timer_min ?? null);
-    fts.run(r.id, fold(r.name), fold(r.ingredients.map((i: any) => i.name).join(', ')));
+    search.run(r.id, fold(`${r.name} ${r.ingredients.map((i: any) => i.name).join(' ')}`));
   }
 
   const sg = prep('INSERT INTO substitution_groups VALUES (?, ?, ?, ?, ?)');

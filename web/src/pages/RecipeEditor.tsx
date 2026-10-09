@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { api, useMeta, type Product, type Recipe, type Slot } from '../api.ts';
+import { api, useMeta, STATIC, type Product, type Recipe, type Slot } from '../api.ts';
 import { SLOT_NAME, SLOT_ORDER, n } from '../format.ts';
 import { go, href } from '../router.tsx';
 import { Chip, ErrorBox, Icon, Macros, Plate, useToast } from '../components/ui.tsx';
@@ -65,7 +65,7 @@ export default function RecipeEditor() {
       <header className="page-head" style={{ marginTop: 10 }}>
         <div>
           <h1>Twój <em>przepis</em>.</h1>
-          <p className="lede">Wybieraj składniki z katalogu – kalorie i makro policzą się same. Wolisz opisać danie słowami? <a href={href('/ai')}>Poproś AI</a>.</p>
+          <p className="lede">Wybieraj składniki z katalogu – kalorie i makro policzą się same.{!STATIC && <> Wolisz opisać danie słowami? <a href={href('/ai')}>Poproś AI</a>.</>}</p>
         </div>
       </header>
       <div className="two-col">

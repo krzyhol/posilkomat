@@ -28,6 +28,14 @@ npm start
 
 Pozostałe skrypty: `npm run db:reset` (baza od nowa z danych startowych) i `npm run typecheck`.
 
+### Wersja online (GitHub Pages)
+
+https://krzyhol.github.io/posilkomat/ – budowana automatycznie przy każdym pushu na `main` (`.github/workflows/pages.yml`).
+
+Ta wersja działa bez serwera: ta sama logika API (`server/routes.ts`) uruchamia się w przeglądarce na bazie SQLite w WebAssembly (sql.js), a jadłospisy, listy zakupów i własne przepisy zapisują się w IndexedDB tej przeglądarki (Ustawienia → „Wyczyść moje dane”). Kuchnia AI jest tu wyłączona, bo strona statyczna nie może bezpiecznie trzymać klucza API.
+
+Lokalny podgląd wersji statycznej: `npm run build:static && npm run preview:static` → http://localhost:4173/posilkomat/
+
 ## Co potrafi
 
 | Ekran | Funkcje |
@@ -45,14 +53,16 @@ Pozostałe skrypty: `npm run db:reset` (baza od nowa z danych startowych) i `npm
 
 ```
 data/seed/*.json        dane startowe (przepisy, produkty, jadłospisy PDF, słowniki) – wynik importu PDF
-db/schema.sql           schemat SQLite (+ FTS5, widoki sum dziennych i zapotrzebowania na produkty)
+db/schema.sql           schemat SQLite (wyszukiwanie po nazwie i składnikach, widoki sum dziennych i zapotrzebowania)
 db/seed.ts              JSON → SQLite
-server/                 API (node:http + node:sqlite, TypeScript uruchamiany bezpośrednio przez Node)
+server/                 API (TypeScript uruchamiany bezpośrednio przez Node)
+  store.ts              dostęp do bazy niezależny od silnika (node:sqlite / sql.js)
+  routes.ts             trasy API – wspólne dla serwera i wersji w przeglądarce
   catalog.ts            produkty, przepisy, wyszukiwanie, wyliczanie makro/diet/alergenów
   planner.ts            układanie jadłospisów, szablony, resztki, ranking podmian
   shopping.ts           lista zakupów: sumowanie, rozwijanie półproduktów, miary domowe, alejki
   ai.ts                 Claude (claude-opus-5-5, structured outputs, fallback przy odmowie, cache katalogu)
-web/                    React + Vite
+web/                    React + Vite (web/src/local – silnik dla wersji bez serwera)
 schema/                 JSON Schema danych startowych i formatu odpowiedzi AI (RecipeDraft)
 tools/import-pdf/       import PDF → data/seed (Python)
 ```

@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import { api, useApi, useMeta, type Recipe, type RecipeSummary, type Slot } from '../api.ts';
+import { api, useApi, useMeta, STATIC, type Recipe, type RecipeSummary, type Slot } from '../api.ts';
 import { DIETS, SLOT_NAME, SLOT_ORDER, SOURCE_LABEL, n, plural, qtyLabel, unitLabel } from '../format.ts';
 import { go, href } from '../router.tsx';
 import { Chip, ErrorBox, Icon, Loading, Macros, Plate, useToast } from '../components/ui.tsx';
@@ -50,7 +50,7 @@ export function RecipesList() {
           <h1 style={{ marginTop: 10 }}>Przepisy, <em>z których</em> układasz dni.</h1>
         </div>
         <div className="row">
-          <a className="btn plum" href={href('/ai')}><Icon.spark />Wymyśl z AI</a>
+          {!STATIC && <a className="btn plum" href={href('/ai')}><Icon.spark />Wymyśl z AI</a>}
           <a className="btn ghost" href={href('/przepisy/nowy')}><Icon.plus />Dodaj własny</a>
         </div>
       </header>
@@ -87,7 +87,7 @@ export function RecipesList() {
         <>
           <p className="muted mono" style={{ fontSize: 13 }}>{data.total} {plural(data.total, 'przepis', 'przepisy', 'przepisów')}</p>
           {data.items.length === 0
-            ? <div className="empty"><h3>Nic nie znalazłem</h3><p>Spróbuj innego słowa albo poproś AI o przepis.</p><a className="btn plum" href={href(`/ai?prompt=${encodeURIComponent(q)}`)}><Icon.spark />Wymyśl „{q || 'coś'}” z AI</a></div>
+            ? <div className="empty"><h3>Nic nie znalazłem</h3><p>Spróbuj innego słowa{STATIC ? '.' : ' albo poproś AI o przepis.'}</p>{!STATIC && <a className="btn plum" href={href(`/ai?prompt=${encodeURIComponent(q)}`)}><Icon.spark />Wymyśl „{q || 'coś'}” z AI</a>}</div>
             : <div className="recipe-grid">{data.items.map((r) => <RecipeCard key={r.id} r={r} />)}</div>}
           {data.items.length < data.total && (
             <div style={{ textAlign: 'center', marginTop: 24 }}><button className="btn ghost" onClick={() => setLimit(limit + 48)}>Pokaż więcej</button></div>
@@ -155,7 +155,7 @@ export function RecipeDetail({ id }: { id: string }) {
             <div className="row" style={{ marginTop: 20 }}>
               <button className="btn tomato" onClick={() => setAdding(true)}><Icon.plan />Do jadłospisu</button>
               <button className="btn ghost" onClick={fav} aria-pressed={r.is_favorite}><Icon.star on={r.is_favorite} />{r.is_favorite ? 'Ulubione' : 'Do ulubionych'}</button>
-              <a className="btn ghost" href={href(`/ai?base=${r.id}`)}><Icon.spark />Przerób z AI</a>
+              {!STATIC && <a className="btn ghost" href={href(`/ai?base=${r.id}`)}><Icon.spark />Przerób z AI</a>}
             </div>
           )}
         </div>

@@ -1,7 +1,7 @@
 // Jadłospisy: układanie, szablony z PDF, podmiana posiłków, „dziś”
-import { all, get, run, tx, qs, now, type Row } from './db.ts';
+import { all, get, run, tx, qs, now, type Row } from './store.ts';
 import { HttpError } from './http.ts';
-import { ftsQuery, slug, plural } from './text.ts';
+import { searchClause, slug, plural } from './text.ts';
 import { getProfile, recipeSummaries } from './catalog.ts';
 
 const SLOT_SHARE: Record<string, number> = { breakfast: 0.225, second_breakfast: 0.225, lunch: 0.25, dinner: 0.22, snack: 0.08 };
@@ -282,8 +282,8 @@ export function swapCandidates(mealId: number, q: { q?: string; flavor?: string;
   const where = [`r.kind = 'meal'`, `r.status = 'active'`, `r.id <> ?`, `r.kcal BETWEEN ? AND ?`];
   const p: (string | number)[] = [m.recipe_id, targetKcal * 0.45, targetKcal * 1.8];
   if (!q.any_slot) { where.push(`r.id IN (SELECT recipe_id FROM recipe_slots WHERE slot_id IN (${qs(compat.length)}))`); p.push(...compat); }
-  const fq = q.q ? ftsQuery(q.q) : '';
-  if (fq) { where.push(`r.id IN (SELECT recipe_id FROM recipes_fts WHERE recipes_fts MATCH ?)`); p.push(fq); }
+  const sc = q.q ? searchClause(q.q) : null;
+  if (sc) { where.push(sc.sql); p.push(...sc.params); }
   if (q.flavor) { where.push('r.flavor = ?'); p.push(q.flavor); }
   const diet = q.diet ?? profile.diet;
   if (diet) { where.push(`r.id IN (SELECT recipe_id FROM recipe_tags WHERE tag_type = 'diet' AND tag = ?)`); p.push(diet); }

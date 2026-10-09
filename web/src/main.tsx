@@ -2,6 +2,7 @@ import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
 import './styles.css';
 import { useRoute, href } from './router.tsx';
+import { STATIC } from './api.ts';
 import { Icon, ToastProvider } from './components/ui.tsx';
 import Today from './pages/Today.tsx';
 import { PlansList, PlanDetail, PlanWizard } from './pages/Plans.tsx';
@@ -27,6 +28,7 @@ function Page() {
   if (!a) page = <Today />;
   else if (a === 'jadlospis') page = !b ? <PlansList /> : b === 'nowy' ? <PlanWizard templateId={query.get('template')} /> : <PlanDetail key={b} id={b} />;
   else if (a === 'przepisy') page = !b ? <RecipesList /> : b === 'nowy' ? <RecipeEditor /> : <RecipeDetail key={b} id={b} />;
+  else if (a === 'ai' && STATIC) page = <div className="empty"><h3>Kuchnia AI działa w wersji lokalnej</h3><p>Na GitHub Pages nie ma serwera, który mógłby bezpiecznie trzymać klucz do Claude API.</p><a className="btn" href={href('/przepisy')}>Przeglądaj przepisy</a></div>;
   else if (a === 'ai') page = <AiKitchen key={query.get('base') ?? ''} baseId={query.get('base')} initialPrompt={query.get('prompt')} />;
   else if (a === 'zakupy') page = !b ? <ShoppingLists /> : <ShoppingDetail key={b} id={b} />;
   else if (a === 'ustawienia') page = <Settings />;
@@ -39,12 +41,12 @@ function Page() {
           <div className="word">Posiłko<b>mat</b></div>
           <div className="sub">automat do jadłospisów</div>
         </div>
-        {NAV.map((n) => (
+        {NAV.filter((n) => !(STATIC && n.path === '/ai')).map((n) => (
           <a key={n.path} href={href(n.path)} className={n.match(path) ? 'on' : ''} aria-current={n.match(path) ? 'page' : undefined}>
             <n.icon /><span className="lbl">{n.label}</span><span className="lbl-s">{n.short}</span>
           </a>
         ))}
-        <div className="foot brand">przepisy z 18 jadłospisów PDF + Twoja kuchnia</div>
+        <div className="foot brand">{STATIC ? 'wersja w przeglądarce · dane zostają na tym urządzeniu' : 'przepisy z 18 jadłospisów PDF + Twoja kuchnia'}</div>
       </nav>
       <main className="main">{page}</main>
     </div>

@@ -1,6 +1,24 @@
 {
   "version": "0.0.1",
   "configurations": [
-    { "name": "posilkomat", "runtimeExecutable": "npm", "runtimeArgs": ["run", "dev"], "port": 5173 }
+    {
+      "name": "posilkomat",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": [
+        "run",
+        "dev"
+      ],
+      "port": 5173
+    },
+    {
+      "name": "posilkomat-static",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": [
+        "run",
+        "preview:static"
+      ],
+      "port": 4173,
+      "url": "http://localhost:4173"
+    }
   ]
 }

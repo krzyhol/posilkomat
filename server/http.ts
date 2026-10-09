@@ -40,6 +40,26 @@ export function send(res: ServerResponse, status: number, data: unknown) {
   res.end(JSON.stringify(data));
 }
 
+/** Wywołanie trasy bez serwera HTTP (np. w przeglądarce): zwraca status i dane jak odpowiedź API. */
+export async function handle(method: string, path: string, body?: unknown): Promise<{ status: number; data: unknown }> {
+  const url = new URL(path, 'http://localhost');
+  for (const r of routes) {
+    if (r.method !== method) continue;
+    const m = url.pathname.match(r.re);
+    if (!m) continue;
+    const params = Object.fromEntries(r.keys.map((k, i) => [k, decodeURIComponent(m[i + 1])]));
+    try {
+      const out = await r.handler({ req: undefined as never, params, query: url.searchParams, body });
+      return { status: out === undefined ? 204 : 200, data: out ?? null };
+    } catch (e: any) {
+      const status = e instanceof HttpError ? e.status : 500;
+      if (status === 500) console.error(e);
+      return { status, data: { error: e?.message ?? 'Błąd' } };
+    }
+  }
+  return { status: 404, data: { error: 'Nie ma takiego adresu API' } };
+}
+
 /** Obsługuje /api/*; zwraca false, jeśli żaden route nie pasuje. */
 export async function dispatch(req: IncomingMessage, res: ServerResponse): Promise<boolean> {
   const url = new URL(req.url ?? '/', 'http://localhost');
