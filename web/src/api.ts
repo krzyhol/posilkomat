@@ -55,10 +55,16 @@ export type Profile = {
 export type ShoppingItem = {
   id: number; product_id: string | null; name: string; amount_g: number | null; household_hint: string | null;
   category_id: string | null; checked: boolean; manual: boolean; pantry_staple: boolean;
+  need_g: number | null; pantry_g: number | null; in_pantry: boolean; stocked: boolean;
 };
+export type PantryItem = {
+  product_id: string; name: string; amount_g: number | null; expires_on: string | null; expires_in_days: number | null;
+  category_id: string; category_name: string;
+};
+export type PantrySuggestion = { recipe: RecipeSummary; have: string[]; missing: string[]; expiring: string[] };
 export type ShoppingList = {
   id: string; plan_id: string | null; name: string; date_from: string | null; date_to: string | null; created_at: string;
-  total: number; checked: number; groups: { id: string; name: string; items: ShoppingItem[] }[];
+  total: number; checked: number; to_stock: number; groups: { id: string; name: string; items: ShoppingItem[] }[];
 };
 export type SwapResult = {
   current: RecipeSummary & { portions: number; kcal_total: number; slot: Slot };

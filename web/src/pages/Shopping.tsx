@@ -3,6 +3,7 @@ import { api, useApi, type ShoppingList, type ShoppingItem } from '../api.ts';
 import { dayMonth, n, plural } from '../format.ts';
 import { go, href } from '../router.tsx';
 import { ErrorBox, Icon, Loading, useToast } from '../components/ui.tsx';
+import { ShopTabs } from './Pantry.tsx';
 
 type ListRow = { id: string; name: string; created_at: string; total: number; checked: number; date_from: string | null; date_to: string | null };
 
@@ -20,6 +21,7 @@ export function ShoppingLists() {
         </div>
         <a className="btn tomato" href={href('/jadlospis')}><Icon.plan />Wybierz jadłospis</a>
       </header>
+      <ShopTabs on="lists" />
       {!data.length && <div className="empty"><h3>Jeszcze nic nie kupujesz</h3><p>Otwórz jadłospis i kliknij „Lista zakupów”.</p></div>}
       <div className="grid-2">
         {data.map((l) => (
@@ -43,6 +45,7 @@ export function ShoppingDetail({ id }: { id: string }) {
   const { data, error, setData } = useApi<ShoppingList>(`/shopping-lists/${id}`);
   const [extra, setExtra] = useState('');
   const [showPantry, setShowPantry] = useState(false);
+  const [showStock, setShowStock] = useState(false);
   if (error) return <ErrorBox error={error} />;
   if (!data) return <Loading />;
 
@@ -72,6 +75,12 @@ export function ShoppingDetail({ id }: { id: string }) {
     go('/zakupy');
   };
   const pantry = data.groups.find((g) => g.id === 'pantry');
+  const stock = data.groups.find((g) => g.id === 'stock');
+  const toPantry = async () => {
+    const r = await api<{ moved: number }>(`/shopping-lists/${id}/to-pantry`, { body: {} });
+    setData(await api<ShoppingList>(`/shopping-lists/${id}`));
+    toast(`${r.moved} ${plural(r.moved, 'produkt', 'produkty', 'produktów')} w spiżarni.`);
+  };
 
   return (
     <>
@@ -88,7 +97,7 @@ export function ShoppingDetail({ id }: { id: string }) {
           <div style={{ fontSize: 12, marginTop: 6 }}>{data.name}</div>
           {data.date_from && data.date_to && <div style={{ fontSize: 12 }}>{dayMonth(data.date_from)} – {dayMonth(data.date_to)}</div>}
         </div>
-        {data.groups.filter((g) => g.id !== 'pantry').map((g) => (
+        {data.groups.filter((g) => g.id !== 'pantry' && g.id !== 'stock').map((g) => (
           <section key={g.id}>
             <h4>{g.name}</h4>
             {g.items.map((i) => (
@@ -96,11 +105,21 @@ export function ShoppingDetail({ id }: { id: string }) {
                 <input type="checkbox" checked={i.checked} onChange={() => toggle(i)} />
                 <span className="nm">{i.name}</span>
                 <span className="dots" />
-                <span className="amt">{amount(i)}{i.household_hint && <small>{i.household_hint}</small>}</span>
+                <span className="amt">{amount(i)}{i.household_hint && <small>{i.household_hint}</small>}{i.pantry_g ? <small>+ {n(i.pantry_g, 0)} g w spiżarni</small> : null}</span>
               </label>
             ))}
           </section>
         ))}
+        {stock && (
+          <section>
+            <h4 style={{ cursor: 'pointer' }} onClick={() => setShowStock(!showStock)}>{stock.name} · {stock.items.length} {showStock ? '▴' : '▾'}</h4>
+            {showStock && stock.items.map((i) => (
+              <div key={i.id} className="ritem done" style={{ cursor: 'default' }}>
+                <span className="nm">{i.name}</span><span className="dots" /><span className="amt">{n(i.need_g ?? 0, 0)} g</span>
+              </div>
+            ))}
+          </section>
+        )}
         {pantry && (
           <section>
             <h4 style={{ cursor: 'pointer' }} onClick={() => setShowPantry(!showPantry)}>{pantry.name} · {pantry.items.length} {showPantry ? '▴' : '▾'}</h4>
@@ -116,6 +135,11 @@ export function ShoppingDetail({ id }: { id: string }) {
           <input className="input" style={{ fontFamily: 'var(--sans)' }} placeholder="Dopisz, np. papier do pieczenia" value={extra} onChange={(e) => setExtra(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && add()} />
           <button className="btn small" onClick={add} aria-label="Dopisz"><Icon.plus /></button>
         </div>
+        {data.to_stock > 0 && (
+          <button className="btn small" style={{ width: '100%', marginTop: 16, fontFamily: 'var(--sans)' }} onClick={toPantry}>
+            <Icon.check />Kupione ({data.to_stock}) → do spiżarni
+          </button>
+        )}
         <div className="sum">
           <span>W KOSZYKU</span>
           <span>{data.checked}/{data.total} {plural(data.total, 'POZYCJA', 'POZYCJE', 'POZYCJI')}</span>

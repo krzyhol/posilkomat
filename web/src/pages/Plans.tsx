@@ -300,6 +300,7 @@ function ShoppingSheet({ plan, onClose }: { plan: Plan; onClose: () => void }) {
   const [from, setFrom] = useState(1);
   const [to, setTo] = useState(Math.min(plan.days.length, 7));
   const [expand, setExpand] = useState(true);
+  const [usePantry, setUsePantry] = useState(true);
   const [busy, setBusy] = useState(false);
   const label = (d: number) => {
     const day = plan.days[d - 1];
@@ -307,7 +308,7 @@ function ShoppingSheet({ plan, onClose }: { plan: Plan; onClose: () => void }) {
   };
   const create = async () => {
     setBusy(true);
-    const list = await api<ShoppingList>(`/plans/${plan.id}/shopping-list`, { body: { day_from: from, day_to: to, expand_base: expand } });
+    const list = await api<ShoppingList>(`/plans/${plan.id}/shopping-list`, { body: { day_from: from, day_to: to, expand_base: expand, use_pantry: usePantry } });
     go(`/zakupy/${list.id}`);
   };
   return (
@@ -327,6 +328,9 @@ function ShoppingSheet({ plan, onClose }: { plan: Plan; onClose: () => void }) {
         </div>
         <label className="toggle"><input type="checkbox" checked={expand} onChange={(e) => setExpand(e.target.checked)} />
           Rozpisz półprodukty (np. ciasto naleśnikowe) na mąkę, mleko i jajka
+        </label>
+        <label className="toggle"><input type="checkbox" checked={usePantry} onChange={(e) => setUsePantry(e.target.checked)} />
+          Odejmij to, co mam w spiżarni
         </label>
         <p className="muted" style={{ margin: 0, fontSize: 14 }}>
           Sumujemy składniki ze wszystkich posiłków{plan.people > 1 ? ` × ${plan.people} osoby` : ''}, resztek nie liczymy drugi raz,

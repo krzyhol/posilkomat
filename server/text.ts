@@ -27,5 +27,11 @@ export const plural = (n: number, one: string, few: string, many: string) => {
   return l >= 2 && l <= 4 && !(l2 >= 12 && l2 <= 14) ? few : many;
 };
 
+/** dzisiejsza data w strefie czasowej urządzenia */
+export const todayIso = () => {
+  const d = new Date();
+  return new Date(d.getTime() - d.getTimezoneOffset() * 60000).toISOString().slice(0, 10);
+};
+
 const round = (x: number, d = 1) => Math.round(x * 10 ** d) / 10 ** d;
 export { round };

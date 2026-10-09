@@ -3,6 +3,7 @@
 import initSqlJs, { type Database } from 'sql.js';
 import wasmUrl from 'sql.js/dist/sql-wasm.wasm?url';
 import { setDriver, type Param } from '../../../server/store.ts';
+import { migrate } from '../../../server/migrations.ts';
 import { handle } from '../../../server/http.ts';
 import '../../../server/routes.ts';
 
@@ -63,6 +64,8 @@ async function init() {
     },
     exec: (sql) => { d.exec(sql); },
   });
+  // baza zapisana w przeglądarce mogła powstać przy starszej wersji aplikacji
+  migrate({ exec: (sql) => { d.exec(sql); }, version: () => Number(d.exec('PRAGMA user_version')[0].values[0][0]) });
 }
 
 let saveTimer: ReturnType<typeof setTimeout> | null = null;

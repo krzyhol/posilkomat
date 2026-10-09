@@ -4,6 +4,7 @@ import {
   getMeta, getProfile, saveProfile, searchProducts, createProduct, listRecipes, getRecipe, createRecipe, patchRecipe, calcNutrition,
 } from './catalog.ts';
 import { createPlan, listPlans, getPlan, deletePlan, getToday, patchMeal, addMeal, deleteMeal, swapCandidates } from './planner.ts';
+import { listPantry, setPantryItem, removePantryItem, stockFromList, pantrySuggestions } from './pantry.ts';
 import { createShoppingList, getShoppingList, listShoppingLists, patchItem, addItem, deleteItem, deleteList } from './shopping.ts';
 
 const num = (v: string | null) => (v === null || v === '' ? undefined : Number(v));
@@ -42,6 +43,12 @@ route('GET', '/api/plan-meals/:id/swap', ({ params, query }) => swapCandidates(N
   q: query.get('q') ?? undefined, flavor: query.get('flavor') ?? undefined, diet: query.get('diet') ?? undefined,
   feature: query.get('feature') ?? undefined, any_slot: query.get('any_slot') === '1', limit: num(query.get('limit')),
 }));
+
+route('GET', '/api/pantry', () => listPantry());
+route('PUT', '/api/pantry/:product', ({ params, body }) => setPantryItem(params.product, body ?? {}));
+route('DELETE', '/api/pantry/:product', ({ params }) => removePantryItem(params.product));
+route('GET', '/api/pantry/suggestions', ({ query }) => pantrySuggestions({ slot: query.get('slot') ?? undefined, limit: num(query.get('limit')) }));
+route('POST', '/api/shopping-lists/:id/to-pantry', ({ params }) => stockFromList(params.id));
 
 route('GET', '/api/shopping-lists', () => listShoppingLists());
 route('POST', '/api/plans/:id/shopping-list', ({ params, body }) => createShoppingList(params.id, body ?? {}));

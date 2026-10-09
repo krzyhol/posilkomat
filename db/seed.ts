@@ -3,6 +3,7 @@ import { DatabaseSync } from 'node:sqlite';
 import { existsSync, readFileSync, rmSync, mkdirSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { migrate } from '../server/migrations.ts';
 
 const root = join(dirname(fileURLToPath(import.meta.url)), '..');
 const args = process.argv.slice(2);
@@ -27,6 +28,7 @@ const { plans } = seed('plans');
 const db = new DatabaseSync(dbPath);
 db.exec('PRAGMA journal_mode = WAL;');
 db.exec(readFileSync(join(root, 'db', 'schema.sql'), 'utf8'));
+migrate({ exec: (sql) => db.exec(sql), version: () => (db.prepare('PRAGMA user_version').get() as { user_version: number }).user_version });
 
 const bool = (b: boolean) => (b ? 1 : 0);
 // to samo składanie tekstu stosuje serwer dla zapytań (server/text.ts): „Łosoś” ≡ „losos”

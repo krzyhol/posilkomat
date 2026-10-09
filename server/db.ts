@@ -5,6 +5,7 @@ import { execFileSync } from 'node:child_process';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { setDriver, type Param } from './store.ts';
+import { migrate } from './migrations.ts';
 
 export const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..');
 const DB_PATH = process.env.POSILKOMAT_DB ?? join(ROOT, 'data', 'posilkomat.db');
@@ -26,3 +27,4 @@ setDriver({
   },
   exec: (sql) => db.exec(sql),
 });
+migrate({ exec: (sql) => db.exec(sql), version: () => (db.prepare('PRAGMA user_version').get() as { user_version: number }).user_version });

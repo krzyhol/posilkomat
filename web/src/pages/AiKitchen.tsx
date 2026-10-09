@@ -27,15 +27,15 @@ const IDEAS = [
   'Przekąska, która zaspokoi ochotę na czekoladę',
 ];
 
-export default function AiKitchen({ baseId, initialPrompt }: { baseId?: string | null; initialPrompt?: string | null }) {
+export default function AiKitchen({ baseId, initialPrompt, initialPantry }: { baseId?: string | null; initialPrompt?: string | null; initialPantry?: string | null }) {
   const meta = useMeta();
   const toast = useToast();
   const base = useApi<Recipe>(baseId ? `/recipes/${baseId}` : null);
-  const [prompt, setPrompt] = useState(initialPrompt ?? '');
+  const [prompt, setPrompt] = useState(initialPrompt ?? (initialPantry ? 'Coś z tego, co mam w domu – jak najmniej dokupowania' : ''));
   const [slot, setSlot] = useState<Slot | ''>('');
   const [kcal, setKcal] = useState('');
   const [servings, setServings] = useState(1);
-  const [pantry, setPantry] = useState('');
+  const [pantry, setPantry] = useState(initialPantry ?? '');
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState<string | null>(null);
   const [res, setRes] = useState<DraftRes | null>(null);

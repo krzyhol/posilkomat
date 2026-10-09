@@ -2,6 +2,7 @@
 import { all, get, run, tx, qs } from './store.ts';
 import { HttpError } from './http.ts';
 import { getProfile } from './catalog.ts';
+import { pantryCoverage } from './pantry.ts';
 
 const COUNTABLE = ['sztuka', 'opakowanie', 'kromka', 'ząbek', 'plaster', 'kostka', 'łodyga', 'listek', 'szklanka'];
 
@@ -51,7 +52,7 @@ function expand(needs: Map<string, Need>) {
   }
 }
 
-export function createShoppingList(planId: string, input: { day_from?: number; day_to?: number; expand_base?: boolean; people?: number }) {
+export function createShoppingList(planId: string, input: { day_from?: number; day_to?: number; expand_base?: boolean; people?: number; use_pantry?: boolean }) {
   const plan = get('SELECT * FROM plans WHERE id = ?', planId);
   if (!plan) throw new HttpError(404, 'Nie ma takiego jadłospisu');
   const range = get('SELECT MIN(day_number) AS a, MAX(day_number) AS b FROM plan_days WHERE plan_id = ?', planId)!;
@@ -73,16 +74,22 @@ export function createShoppingList(planId: string, input: { day_from?: number; d
   const prods = new Map(all(`SELECT id, name, category_id, shoppable FROM products WHERE id IN (${qs(needs.size || 1)})`,
     ...(needs.size ? [...needs.keys()] : [''])).map((p) => [p.id, p]));
   const dates = all('SELECT day_number, date FROM plan_days WHERE plan_id = ? AND day_number IN (?, ?)', planId, from, to);
+  const pantry = input.use_pantry === false ? new Map<string, number | null>() : pantryCoverage();
   const id = `lista-${planId}-${Date.now().toString(36)}`;
+  const r5 = (g: number) => (g < 10 ? Math.round(g * 2) / 2 : Math.round(g / 5) * 5);
   tx(() => {
     run(`INSERT INTO shopping_lists (id, plan_id, name, date_from, date_to) VALUES (?,?,?,?,?)`, id, planId,
       `${plan.name} · dni ${from}–${to}`, dates.find((d) => d.day_number === from)?.date ?? null, dates.find((d) => d.day_number === to)?.date ?? null);
     for (const n of needs.values()) {
       const p = prods.get(n.product_id);
       if (!p || !p.shoppable || n.amount_g < 0.5) continue;
-      const g = n.amount_g < 10 ? Math.round(n.amount_g * 2) / 2 : Math.round(n.amount_g / 5) * 5;
-      run(`INSERT INTO shopping_items (list_id, product_id, amount_g, household_hint, category_id) VALUES (?,?,?,?,?)`,
-        id, n.product_id, g, householdHint(n.product_id, n.amount_g), p.category_id);
+      // spiżarnia pokrywa część (albo całość – pozycja „mam”, bez ilości)
+      const stock = pantry.has(n.product_id) ? pantry.get(n.product_id) : undefined;
+      const covered = stock === undefined ? 0 : stock === null ? n.amount_g : Math.min(stock, n.amount_g);
+      const left = Math.max(0, n.amount_g - covered);
+      run(`INSERT INTO shopping_items (list_id, product_id, amount_g, household_hint, category_id, need_g, pantry_g) VALUES (?,?,?,?,?,?,?)`,
+        id, n.product_id, left < 0.5 ? 0 : r5(left), left < 0.5 ? null : householdHint(n.product_id, left), p.category_id,
+        r5(n.amount_g), covered ? r5(covered) : null);
     }
   });
   return getShoppingList(id);
@@ -95,16 +102,21 @@ export function getShoppingList(id: string) {
   const items = all(`SELECT i.*, COALESCE(p.name, i.custom_name) AS name, p.pantry_staple, c.name AS category_name, c.position AS category_position
       FROM shopping_items i LEFT JOIN products p ON p.id = i.product_id LEFT JOIN product_categories c ON c.id = i.category_id
       WHERE i.list_id = ? ORDER BY COALESCE(c.position, 99), name COLLATE NOCASE`, id)
-    .map((i) => ({ ...i, checked: !!i.checked, manual: !!i.manual, pantry_staple: !!i.pantry_staple }));
+    .map((i) => ({ ...i, checked: !!i.checked, manual: !!i.manual, pantry_staple: !!i.pantry_staple, stocked: !!i.stocked,
+      in_pantry: !!i.pantry_g && !(i.amount_g > 0) }));
   const groups: { id: string; name: string; items: typeof items }[] = [];
   for (const it of items) {
-    const key = it.pantry_staple && profile.hide_pantry_staples ? 'pantry' : it.category_id ?? 'inne';
+    const key = it.in_pantry ? 'stock' : it.pantry_staple && profile.hide_pantry_staples ? 'pantry' : it.category_id ?? 'inne';
     let g = groups.find((x) => x.id === key);
-    if (!g) groups.push((g = { id: key, name: key === 'pantry' ? 'Pewnie masz w domu' : it.category_name ?? 'Dopisane', items: [] }));
+    const name = key === 'stock' ? 'Masz w spiżarni' : key === 'pantry' ? 'Pewnie masz w domu' : it.category_name ?? 'Dopisane';
+    if (!g) groups.push((g = { id: key, name, items: [] }));
     g.items.push(it);
   }
-  groups.sort((a, b) => (a.id === 'pantry' ? 1 : 0) - (b.id === 'pantry' ? 1 : 0));
-  return { ...list, total: items.length, checked: items.filter((i) => i.checked).length, groups };
+  const tail = (id: string) => (id === 'stock' ? 1 : id === 'pantry' ? 2 : 0);
+  groups.sort((a, b) => tail(a.id) - tail(b.id));
+  const toBuy = items.filter((i) => !i.in_pantry);
+  return { ...list, total: toBuy.length, checked: toBuy.filter((i) => i.checked).length,
+    to_stock: items.filter((i) => i.checked && !i.stocked && i.product_id && i.amount_g > 0).length, groups };
 }
 
 export function listShoppingLists() {

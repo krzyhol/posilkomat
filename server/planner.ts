@@ -1,7 +1,8 @@
 // Jadłospisy: układanie, szablony z PDF, podmiana posiłków, „dziś”
 import { all, get, run, tx, qs, now, type Row } from './store.ts';
 import { HttpError } from './http.ts';
-import { searchClause, slug, plural } from './text.ts';
+import { searchClause, slug, plural, todayIso } from './text.ts';
+import { consumeForMeal } from './pantry.ts';
 import { getProfile, recipeSummaries } from './catalog.ts';
 
 const SLOT_SHARE: Record<string, number> = { breakfast: 0.225, second_breakfast: 0.225, lunch: 0.25, dinner: 0.22, snack: 0.08 };
@@ -14,10 +15,7 @@ const addDays = (iso: string, n: number) => {
   d.setUTCDate(d.getUTCDate() + n);
   return d.toISOString().slice(0, 10);
 };
-export const todayIso = () => {
-  const d = new Date();
-  return new Date(d.getTime() - d.getTimezoneOffset() * 60000).toISOString().slice(0, 10);
-};
+export { todayIso };
 
 /** porcja dopasowana do celu kcal: krok 0,1, zakres 0,5–2; ±8% zostawiamy 1 porcję */
 export function fitPortions(recipeKcal: number, target: number) {
@@ -246,6 +244,9 @@ export function patchMeal(id: number, patch: { recipe_id?: string; portions?: nu
     }
     if (patch.status) {
       if (!['planned', 'eaten', 'skipped'].includes(patch.status)) throw new HttpError(400, 'Nieznany status');
+      // zjedzone zużywa zapasy ze spiżarni, cofnięcie je oddaje
+      if (patch.status === 'eaten' && m.status !== 'eaten') consumeForMeal(id, -1);
+      if (patch.status !== 'eaten' && m.status === 'eaten') consumeForMeal(id, 1);
       run('UPDATE plan_meals SET status = ? WHERE id = ?', patch.status, id);
     }
     run('UPDATE plans SET updated_at = ? WHERE id = ?', now(), m.plan_id);
