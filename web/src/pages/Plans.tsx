@@ -222,7 +222,10 @@ export function PlanDetail({ id }: { id: string }) {
         <div className="row">
           {isTpl
             ? <a className="btn tomato" href={href(`/jadlospis/nowy?template=${plan.id}`)}>Użyj tego planu</a>
-            : <button className="btn tomato" onClick={() => setShop(true)}><Icon.cart />Lista zakupów</button>}
+            : <>
+                <button className="btn tomato" onClick={() => setShop(true)}><Icon.cart />Lista zakupów</button>
+                <a className="btn ghost" href={href(`/jadlospis/${plan.id}/gotowanie`)}><Icon.pot />Dzień gotowania</a>
+              </>}
           <div className="tabs">
             <button className={view === 'day' ? 'on' : ''} onClick={() => setView('day')}>Dzień</button>
             <button className={view === 'week' ? 'on' : ''} onClick={() => setView('week')}>Tydzień</button>

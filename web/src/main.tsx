@@ -12,6 +12,7 @@ import AiKitchen from './pages/AiKitchen.tsx';
 import { ShoppingLists, ShoppingDetail } from './pages/Shopping.tsx';
 import Settings from './pages/Settings.tsx';
 import Pantry from './pages/Pantry.tsx';
+import PrepDay from './pages/PrepDay.tsx';
 
 const NAV = [
   { path: '/', label: 'Dziś', short: 'Dziś', icon: Icon.today, match: (p: string) => p === '/' },
@@ -26,7 +27,9 @@ function Page() {
   const { path, parts, query } = useRoute();
   const [a, b] = parts;
   let page;
+  const [, , c] = parts;
   if (!a) page = <Today />;
+  else if (a === 'jadlospis' && b && c === 'gotowanie') page = <PrepDay key={b} planId={b} />;
   else if (a === 'jadlospis') page = !b ? <PlansList /> : b === 'nowy' ? <PlanWizard templateId={query.get('template')} /> : <PlanDetail key={b} id={b} />;
   else if (a === 'przepisy') page = !b ? <RecipesList /> : b === 'nowy' ? <RecipeEditor /> : <RecipeDetail key={b} id={b} mealId={query.get('meal') ? Number(query.get('meal')) : null} />;
   else if (a === 'ai' && STATIC) page = <div className="empty"><h3>Kuchnia AI działa w wersji lokalnej</h3><p>Na GitHub Pages nie ma serwera, który mógłby bezpiecznie trzymać klucz do Claude API.</p><a className="btn" href={href('/przepisy')}>Przeglądaj przepisy</a></div>;

@@ -1,5 +1,5 @@
 // Podmiana pojedynczego składnika: lista wymienników z PDF + podobne produkty z katalogu, zapis jako wariant przepisu
-import { all, get } from './store.ts';
+import { all, get, run } from './store.ts';
 import { HttpError } from './http.ts';
 import { createRecipe, getProfile, getRecipe } from './catalog.ts';
 import { patchMeal } from './planner.ts';
@@ -115,6 +115,9 @@ export function createVariant(recipeId: string, input: { replacements: { positio
     },
     source: { type: 'user', based_on_recipe_id: r.id },
   });
+  // wariant to to samo danie – przejmuje typ dania i źródło białka oryginału
+  run(`INSERT OR IGNORE INTO recipe_tags (recipe_id, tag_type, tag)
+       SELECT ?, tag_type, tag FROM recipe_tags WHERE recipe_id = ? AND tag_type IN ('dish_type', 'protein')`, recipe!.id, r.id);
   if (input.plan_meal_id) patchMeal(input.plan_meal_id, { recipe_id: recipe!.id, portions: undefined });
-  return recipe;
+  return getRecipe(recipe!.id);
 }

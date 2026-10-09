@@ -328,3 +328,27 @@ h3 { font-size: 20px; line-height: 1.2; }
 .tabs button { border: 0; background: none; padding: 6px 14px; border-radius: 999px; cursor: pointer; font-weight: 600; font-size: 14px; }
 .tabs button.on { background: var(--ink); color: var(--paper); }
 @media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation: none !important; transition: none !important; } }
+
+/* dzień gotowania */
+.prep { list-style: none; margin: 0; padding: 0; display: grid; gap: 14px; }
+.prep h3 { display: flex; align-items: center; gap: 12px; }
+.prep-nr { display: inline-grid; place-items: center; width: 34px; height: 34px; border-radius: 50%; background: var(--ink); color: var(--paper); font: 600 16px/1 var(--mono); }
+.prep ul { list-style: none; padding: 0; margin: 12px 0 0; display: grid; gap: 4px; }
+.prep ul li { padding: 8px 0; border-top: 1px dashed var(--line); }
+.prep ul li.done .t { text-decoration: line-through; color: var(--muted); }
+.labels { display: grid; gap: 12px; grid-template-columns: repeat(auto-fill, minmax(190px, 1fr)); }
+.label {
+  text-decoration: none; display: grid; gap: 8px; padding: 12px 14px; border-radius: 8px; background: #fffdf8;
+  border: 1.5px solid var(--ink); font-family: var(--mono); font-size: 12px; box-shadow: 3px 3px 0 var(--ink);
+}
+.label .l-top, .label .l-foot { display: flex; justify-content: space-between; text-transform: uppercase; letter-spacing: 0.08em; }
+.label .l-name { font: 560 16px/1.2 var(--display); }
+.label .l-foot { border-top: 1px dashed var(--line-2); padding-top: 6px; }
+.label .l-note { color: var(--muted); }
+.label.freezer { background: #eef4f7; box-shadow: 3px 3px 0 #2d5c73; border-color: #2d5c73; }
+@media print {
+  .rail, .no-print, .toast { display: none !important; }
+  body { background: #fff; }
+  .main { padding: 0; max-width: none; }
+  .card, .label { box-shadow: none; break-inside: avoid; }
+}

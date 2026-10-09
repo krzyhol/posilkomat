@@ -5,6 +5,7 @@ import {
 } from './catalog.ts';
 import { createPlan, listPlans, getPlan, deletePlan, getToday, patchMeal, addMeal, deleteMeal, swapCandidates } from './planner.ts';
 import { ingredientSubstitutes, createVariant } from './substitutes.ts';
+import { prepPlan } from './prep.ts';
 import { listPantry, setPantryItem, removePantryItem, stockFromList, pantrySuggestions } from './pantry.ts';
 import { createShoppingList, getShoppingList, listShoppingLists, patchItem, addItem, deleteItem, deleteList } from './shopping.ts';
 
@@ -39,6 +40,9 @@ route('GET', '/api/today', ({ query }) => getToday(query.get('date') ?? undefine
 route('GET', '/api/plans', () => listPlans());
 route('POST', '/api/plans', ({ body }) => createPlan(body ?? {}));
 route('GET', '/api/plans/:id', ({ params }) => getPlan(params.id));
+route('GET', '/api/plans/:id/prep', ({ params, query }) => prepPlan(params.id, {
+  day_from: num(query.get('day_from')), day_to: num(query.get('day_to')), prep_date: query.get('prep_date') ?? undefined,
+}));
 route('DELETE', '/api/plans/:id', ({ params }) => deletePlan(params.id));
 route('PATCH', '/api/plan-meals/:id', ({ params, body }) => patchMeal(Number(params.id), body ?? {}));
 route('DELETE', '/api/plan-meals/:id', ({ params }) => deleteMeal(Number(params.id)));
